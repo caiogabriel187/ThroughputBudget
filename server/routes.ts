@@ -3,11 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // API routes for 5G NR Calculator
+  // MVP: All calculations are client-side, no backend persistence
+  
+  // Health check endpoint
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", service: "5G NR Calculator" });
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // Future endpoints for calculation history:
+  // app.post("/api/calculations/save", async (req, res) => { ... });
+  // app.get("/api/calculations/history", async (req, res) => { ... });
 
   const httpServer = createServer(app);
 
