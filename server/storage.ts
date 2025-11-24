@@ -1,18 +1,50 @@
-// Storage interface for 5G NR Calculator
-// MVP: No persistence needed - all calculations are client-side
-// Future: Can add calculation history storage here
+import { db } from "../db";
+import { calculations, type InsertCalculation, type Calculation } from "@shared/schema";
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
-  // Future: Add calculation history methods
-  // saveCalculation(type: string, data: any): Promise<void>;
-  // getCalculationHistory(limit?: number): Promise<any[]>;
+  // Calculation history methods
+  saveCalculation(calculation: InsertCalculation): Promise<Calculation>;
+  getCalculations(limit?: number): Promise<Calculation[]>;
+  getCalculation(id: string): Promise<Calculation | undefined>;
+  deleteCalculation(id: string): Promise<void>;
+  getCalculationsByType(type: string, limit?: number): Promise<Calculation[]>;
 }
 
-export class MemStorage implements IStorage {
-  // Future: In-memory storage for calculation history
-  constructor() {
-    // No storage needed for MVP
+export class DbStorage implements IStorage {
+  async saveCalculation(calculation: InsertCalculation): Promise<Calculation> {
+    const [result] = await db.insert(calculations).values(calculation).returning();
+    return result;
+  }
+
+  async getCalculations(limit: number = 50): Promise<Calculation[]> {
+    return await db
+      .select()
+      .from(calculations)
+      .orderBy(desc(calculations.createdAt))
+      .limit(limit);
+  }
+
+  async getCalculation(id: string): Promise<Calculation | undefined> {
+    const [result] = await db
+      .select()
+      .from(calculations)
+      .where(eq(calculations.id, id));
+    return result;
+  }
+
+  async deleteCalculation(id: string): Promise<void> {
+    await db.delete(calculations).where(eq(calculations.id, id));
+  }
+
+  async getCalculationsByType(type: string, limit: number = 50): Promise<Calculation[]> {
+    return await db
+      .select()
+      .from(calculations)
+      .where(eq(calculations.type, type))
+      .orderBy(desc(calculations.createdAt))
+      .limit(limit);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();

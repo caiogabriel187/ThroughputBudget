@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SaveCalculationDialog } from "@/components/save-calculation-dialog";
+import { CalculationHistory } from "@/components/calculation-history";
+import type { Calculation } from "@shared/schema";
 
 export default function Calculator() {
   const { toast } = useToast();
@@ -197,6 +200,102 @@ SINR: ${sinrDb.toFixed(2)} dB`;
     );
   }
 
+  // Load calculation from history
+  function loadCalculation(calculation: Calculation) {
+    if (calculation.type === "throughput") {
+      const params = calculation.parameters as any;
+      setFr(params.fr);
+      setFddTdd(params.fddTdd);
+      setNumerology(params.numerology);
+      setScs(params.scs);
+      setBwMHz(params.bandwidth);
+      setAggregatedCarriers(params.carriers);
+      setManualPRBs(params.manualPRBs || "");
+      setModulation(params.modulation);
+      setCodeRate(params.codeRate);
+      setMimoLayers(params.mimoLayers);
+      setTbsScaling(params.tbsScaling);
+      setNumBeams(params.numBeams);
+      setSlotFormat(params.slotFormat);
+      if (params.customDlFraction !== undefined) {
+        setCustomDlFraction(params.customDlFraction);
+      }
+      setSignalingOverhead(params.signalingOverhead);
+      setMode("throughput");
+    } else {
+      const params = calculation.parameters as any;
+      setTxPower(params.txPower);
+      setTxGain(params.txGain);
+      setTxCableLoss(params.txCableLoss);
+      setRxGain(params.rxGain);
+      setRxCableLoss(params.rxCableLoss);
+      setOtherLosses(params.otherLosses);
+      setFrequency(params.frequency);
+      setDistanceKm(params.distance);
+      setPathModel(params.pathModel);
+      if (params.customPathLoss !== undefined) {
+        setCustomPathLoss(params.customPathLoss);
+      }
+      setNoiseFigure(params.noiseFigure);
+      setRbBandwidthMHz(params.rbBandwidthMHz);
+      setMode("linkbudget");
+    }
+    toast({
+      title: "Scenario loaded",
+      description: `Loaded "${calculation.name}"`,
+    });
+  }
+
+  // Prepare data for saving
+  const throughputData = {
+    parameters: {
+      fr,
+      fddTdd,
+      numerology,
+      scs,
+      bandwidth: bwMHz,
+      carriers: aggregatedCarriers,
+      manualPRBs,
+      modulation,
+      codeRate,
+      mimoLayers,
+      tbsScaling,
+      numBeams,
+      slotFormat,
+      customDlFraction,
+      signalingOverhead,
+    },
+    results: {
+      prbs,
+      spectralEfficiency,
+      dlFraction,
+      throughput: throughputMbps,
+    },
+  };
+
+  const linkBudgetData = {
+    parameters: {
+      txPower,
+      txGain,
+      txCableLoss,
+      rxGain,
+      rxCableLoss,
+      otherLosses,
+      frequency,
+      distance: distanceKm,
+      pathModel,
+      customPathLoss,
+      noiseFigure,
+      rbBandwidthMHz,
+    },
+    results: {
+      pathLoss,
+      receivedPower,
+      noiseFloor,
+      sinr: sinrDb,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -210,8 +309,11 @@ SINR: ${sinrDb.toFixed(2)} dB`;
           </p>
         </div>
 
-        {/* Mode Switcher */}
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "throughput" | "linkbudget")} className="w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Calculator Area */}
+          <div className="lg:col-span-2">
+            {/* Mode Switcher */}
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "throughput" | "linkbudget")} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-6" data-testid="tabs-mode-switcher">
             <TabsTrigger value="throughput" data-testid="tab-throughput">
               Throughput
@@ -481,6 +583,11 @@ SINR: ${sinrDb.toFixed(2)} dB`;
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
+                  <SaveCalculationDialog
+                    type="throughput"
+                    parameters={throughputData.parameters}
+                    results={throughputData.results}
+                  />
                   <Button
                     variant="default"
                     onClick={copyThroughputResults}
@@ -711,6 +818,11 @@ SINR: ${sinrDb.toFixed(2)} dB`;
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
+                  <SaveCalculationDialog
+                    type="linkbudget"
+                    parameters={linkBudgetData.parameters}
+                    results={linkBudgetData.results}
+                  />
                   <Button
                     variant="default"
                     onClick={copyLinkBudgetResults}
@@ -738,6 +850,13 @@ SINR: ${sinrDb.toFixed(2)} dB`;
             </Card>
           </TabsContent>
         </Tabs>
+          </div>
+
+          {/* History Sidebar */}
+          <div className="lg:col-span-1">
+            <CalculationHistory type={mode} onLoad={loadCalculation} />
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-muted-foreground">
