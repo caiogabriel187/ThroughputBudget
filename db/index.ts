@@ -8,5 +8,7 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = neon(process.env.DATABASE_URL, {
+  fullResults: false,
+});
 export const db = drizzle(sql, { schema });

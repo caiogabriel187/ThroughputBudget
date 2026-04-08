@@ -5,7 +5,7 @@ Professional 5G NR calculator for RF engineers and telecommunications profession
 
 **Purpose**: Enable RF engineers to quickly calculate 5G network performance metrics including PHY layer throughput, spectral efficiency, path loss, and SINR under various configuration scenarios.
 
-**Current State**: MVP implementation with full throughput and link budget calculators, real-time calculations, CSV export, and clipboard functionality.
+**Current State**: MVP implementation with full throughput and link budget calculators, real-time calculations, CSV export, clipboard functionality, and database-backed calculation history.
 
 ## Recent Changes
 - **2025-01-24**: Initial implementation
@@ -14,6 +14,10 @@ Professional 5G NR calculator for RF engineers and telecommunications profession
   - Built professional Material Design-inspired UI
   - Added CSV export and clipboard copy functionality
   - Configured Inter and JetBrains Mono fonts for optimal readability
+- **2026-04-08**: Added PostgreSQL persistence and scenario history
+  - Created `calculations` table for saved scenarios
+  - Added save/load/delete/search history API endpoints
+  - Built sidebar history UI with type filtering
 
 ## User Preferences
 - **Design System**: Material Design with emphasis on data density and technical precision
