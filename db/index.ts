@@ -1,14 +1,17 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+// Use individual PG* vars (Replit native Postgres) with SSL
+const client = process.env.PGHOST
+  ? postgres({
+      host: process.env.PGHOST,
+      port: parseInt(process.env.PGPORT || "5432"),
+      database: process.env.PGDATABASE,
+      username: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      ssl: "require",
+    })
+  : postgres(process.env.DATABASE_URL!, { ssl: "require" });
 
-const sql = neon(process.env.DATABASE_URL, {
-  fullResults: false,
-});
-export const db = drizzle(sql, { schema });
+export const db = drizzle(client, { schema });

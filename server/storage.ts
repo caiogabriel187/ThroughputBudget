@@ -1,9 +1,6 @@
-import { db } from "../db";
-import { calculations, type InsertCalculation, type Calculation } from "@shared/schema";
-import { desc, eq } from "drizzle-orm";
+import { type InsertCalculation, type Calculation } from "@shared/schema";
 
 export interface IStorage {
-  // Calculation history methods
   saveCalculation(calculation: InsertCalculation): Promise<Calculation>;
   getCalculations(limit?: number): Promise<Calculation[]>;
   getCalculation(id: string): Promise<Calculation | undefined>;
@@ -11,40 +8,87 @@ export interface IStorage {
   getCalculationsByType(type: string, limit?: number): Promise<Calculation[]>;
 }
 
-export class DbStorage implements IStorage {
+// In-memory storage as the primary/fallback storage
+export class MemStorage implements IStorage {
+  private calculations: Map<string, Calculation> = new Map();
+  private nextId = 1;
+
   async saveCalculation(calculation: InsertCalculation): Promise<Calculation> {
-    const [result] = await db.insert(calculations).values(calculation).returning();
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const result: Calculation = {
+      ...calculation,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.calculations.set(id, result);
     return result;
   }
 
   async getCalculations(limit: number = 50): Promise<Calculation[]> {
-    return await db
-      .select()
-      .from(calculations)
-      .orderBy(desc(calculations.createdAt))
-      .limit(limit);
+    return Array.from(this.calculations.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
   }
 
   async getCalculation(id: string): Promise<Calculation | undefined> {
-    const [result] = await db
-      .select()
-      .from(calculations)
-      .where(eq(calculations.id, id));
-    return result;
+    return this.calculations.get(id);
   }
 
   async deleteCalculation(id: string): Promise<void> {
-    await db.delete(calculations).where(eq(calculations.id, id));
+    this.calculations.delete(id);
   }
 
   async getCalculationsByType(type: string, limit: number = 50): Promise<Calculation[]> {
-    return await db
-      .select()
-      .from(calculations)
-      .where(eq(calculations.type, type))
-      .orderBy(desc(calculations.createdAt))
-      .limit(limit);
+    return Array.from(this.calculations.values())
+      .filter((c) => c.type === type)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
   }
 }
 
-export const storage = new DbStorage();
+// Try DB storage, fall back to mem
+async function createStorage(): Promise<IStorage> {
+  try {
+    const { DbStorage } = await import("./db-storage.js");
+    const dbStorage = new DbStorage();
+    // Test the connection with a quick query
+    await dbStorage.getCalculations(1);
+    console.log("[storage] Using database storage");
+    return dbStorage;
+  } catch (err: any) {
+    console.warn("[storage] Database unavailable, using in-memory storage:", err.message);
+    return new MemStorage();
+  }
+}
+
+let storageInstance: IStorage | null = null;
+
+async function getStorage(): Promise<IStorage> {
+  if (!storageInstance) {
+    storageInstance = await createStorage();
+  }
+  return storageInstance;
+}
+
+// Proxy that lazily initializes storage
+class LazyStorage implements IStorage {
+  async saveCalculation(data: InsertCalculation) {
+    return (await getStorage()).saveCalculation(data);
+  }
+  async getCalculations(limit?: number) {
+    return (await getStorage()).getCalculations(limit);
+  }
+  async getCalculation(id: string) {
+    return (await getStorage()).getCalculation(id);
+  }
+  async deleteCalculation(id: string) {
+    return (await getStorage()).deleteCalculation(id);
+  }
+  async getCalculationsByType(type: string, limit?: number) {
+    return (await getStorage()).getCalculationsByType(type, limit);
+  }
+}
+
+export const storage = new LazyStorage();
