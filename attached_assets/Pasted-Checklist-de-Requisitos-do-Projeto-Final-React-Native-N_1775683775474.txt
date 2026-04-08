@@ -1,0 +1,17 @@
+Checklist de Requisitos do Projeto Final (React Native + Node.js)
+O projeto final tem tema livre, mas para ser aceito e avaliado, a solução (Aplicativo + Backend) deve obrigatoriamente cumprir os requisitos técnicos abaixo, baseados no conteúdo estudado ao longo do semestre:1. Interface e Fundamentos (Unidade II)
+[ ] Componentes Core: O app utiliza corretamente os componentes visuais nativos abordados no curso (View, Text, TextInput, TouchableOpacity, Image, etc.).
+[ ] Estilização e Layout: O layout é responsivo e estilizado exclusivamente através do StyleSheet, utilizando as regras do Flexbox para o alinhamento e distribuição dos elementos na tela.
+[ ] Gerenciamento de Estado Local: O aplicativo possui interatividade fluida, utilizando o hook useState para controlar inputs de texto, modais ou estados de carregamento (Loading).
+2. Navegação e Estrutura de Tela (Unidade III)
+[ ] Rotas e Navegação: O aplicativo possui no mínimo 3 telas diferentes (ex: Tela Principal, Tela de Detalhes, Tela de Cadastro) conectadas através do React Navigation.
+[ ] Listagens Eficientes: O aplicativo exibe uma lista de dados dinâmicos utilizando o componente <FlatList> (com rolagem otimizada e extração correta de chaves).
+[ ] Formulários Básicos: Existe pelo menos uma tela com um formulário de entrada de dados com validação simples (ex: impedir o envio se os campos obrigatórios estiverem vazios).
+3. Integração com Backend (Unidade IV)
+[ ] API Própria (Node.js + Express): O aluno (ou grupo) deve construir e entregar uma API simples em Node.js com Express para servir os dados do aplicativo.
+[ ] Consumo de Dados (GET): O aplicativo React Native deve realizar requisições HTTP (usando axios ou fetch) para buscar a lista de dados da API Node.js e exibi-la na FlatList.
+[ ] Envio de Dados (POST/PUT/DELETE): O aplicativo deve ser capaz de enviar dados do formulário para a API (ex: cadastrar um novo item) e atualizar a lista na tela.
+[ ] Feedback Visual de Rede: O app deve mostrar um indicador de carregamento (ActivityIndicator) enquanto aguarda a resposta da API e tratar erros básicos (ex: "Falha na conexão" via Alert).
+4. Boas Práticas e Entrega (Critérios Gerais)
+[ ] Componentização: O código não está centralizado em um único arquivo. Elementos visuais repetitivos (como cards da lista ou botões customizados) foram transformados em componentes reutilizáveis (src/components).
+[ ] Versionamento e Entrega: O projeto foi entregue através de repositórios no GitHub (podendo ser um para o App e outro para a API), contendo o arquivo README.md com instruções de como rodar o frontend e o backend localmente.
