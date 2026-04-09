@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Download, BarChart2, Zap, Radio } from "lucide-react";
+import { Copy, Download, BarChart2, Zap, Radio, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SaveCalculationDialog } from "@/components/save-calculation-dialog";
 import { CalculationHistory } from "@/components/calculation-history";
@@ -390,11 +390,21 @@ export default function Calculator() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">5G NR Calculator</h1>
-          <p className="text-sm text-muted-foreground">
-            Professional throughput and link budget analysis for RF engineers
-          </p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">5G NR Calculator</h1>
+            <p className="text-sm text-muted-foreground">
+              Professional throughput and link budget analysis for RF engineers
+            </p>
+          </div>
+          <a
+            href="/mobile"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium no-underline hover:opacity-90 transition-opacity"
+            data-testid="link-mobile-app"
+          >
+            <Smartphone className="w-4 h-4" />
+            Aplicativo Mobile
+          </a>
         </div>
 
         {/* Vendor Presets */}

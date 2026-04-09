@@ -22,6 +22,16 @@ Professional 5G NR calculator for RF engineers and telecommunications profession
   - Added SINR quality indicator (Excellent/Good/Marginal/Poor)
   - Switched to postgres-js driver with SSL; in-memory storage fallback when DB unavailable
   - Storage layer: LazyStorage proxy with graceful DB → MemStorage fallback
+- **2026-04-09**: React Native Mobile App (academic checklist)
+  - Built full React Native mobile app at `/mobile` using react-native-web
+  - 4 screens: HomeScreen (calculator), HistoryScreen (FlatList), SaveScreen (form), DetailScreen
+  - Custom navigation system mirroring React Navigation API (NavigationContainer, createNativeStackNavigator)
+  - API integration via axios in services/api.ts
+  - Form validation in SaveScreen (required field, min/max length)
+  - ActivityIndicator loading states and Alert error handling
+  - Reusable components: CalculationCard (FlatList item), LoadingIndicator
+  - All React Native core components: View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet
+  - Added README.md with complete setup instructions and requirement checklist
 
 ## User Preferences
 - **Design System**: Material Design with emphasis on data density and technical precision
@@ -94,7 +104,24 @@ Professional 5G NR calculator for RF engineers and telecommunications profession
 client/src/
 ├── pages/
 │   ├── calculator.tsx      # Main calculator component (all features)
+│   ├── mobile.tsx          # Mobile app page wrapper (/mobile route)
 │   └── not-found.tsx       # 404 page
+├── mobile/                 # React Native mobile app (react-native-web)
+│   ├── MobileApp.tsx       # Entry point with NavigationContainer
+│   ├── navigation/
+│   │   └── index.tsx       # Custom navigation (React Navigation API)
+│   ├── screens/
+│   │   ├── HomeScreen.tsx  # Calculator with TextInput/TouchableOpacity
+│   │   ├── HistoryScreen.tsx # FlatList with search/filter
+│   │   ├── SaveScreen.tsx  # Form with validation + ActivityIndicator
+│   │   └── DetailScreen.tsx # Scenario details
+│   ├── components/
+│   │   ├── CalculationCard.tsx # Reusable FlatList item card
+│   │   └── LoadingIndicator.tsx # ActivityIndicator wrapper
+│   ├── services/
+│   │   └── api.ts          # axios API service (GET/POST/DELETE)
+│   └── types/
+│       └── react-native-web.d.ts # Type declaration for RN web
 ├── components/
 │   ├── save-calculation-dialog.tsx  # Save scenario dialog
 │   ├── calculation-history.tsx      # History sidebar
