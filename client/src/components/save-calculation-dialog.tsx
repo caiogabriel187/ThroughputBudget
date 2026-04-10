@@ -35,16 +35,16 @@ export function SaveCalculationDialog({ type, parameters, results }: SaveCalcula
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calculations"] });
       toast({
-        title: "Calculation saved",
-        description: "Your scenario has been saved successfully",
+        title: "Cálculo salvo",
+        description: "Seu cenário foi salvo com sucesso",
       });
       setOpen(false);
       setName("");
     },
     onError: (error: any) => {
       toast({
-        title: "Save failed",
-        description: error.message || "Could not save calculation",
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar o cálculo",
         variant: "destructive",
       });
     },
@@ -53,8 +53,8 @@ export function SaveCalculationDialog({ type, parameters, results }: SaveCalcula
   const handleSave = () => {
     if (!name.trim()) {
       toast({
-        title: "Name required",
-        description: "Please enter a name for this scenario",
+        title: "Nome obrigatório",
+        description: "Por favor, insira um nome para este cenário",
         variant: "destructive",
       });
       return;
@@ -73,22 +73,22 @@ export function SaveCalculationDialog({ type, parameters, results }: SaveCalcula
       <DialogTrigger asChild>
         <Button variant="outline" data-testid={`button-save-${type}`}>
           <Save className="w-4 h-4 mr-2" />
-          Save Scenario
+          Salvar Cenário
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save Calculation</DialogTitle>
+          <DialogTitle>Salvar Cálculo</DialogTitle>
           <DialogDescription>
-            Save this {type === "throughput" ? "throughput" : "link budget"} scenario for later use
+            Salve este cenário de {type === "throughput" ? "throughput" : "link budget"} para uso posterior
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Scenario Name</Label>
+            <Label htmlFor="name">Nome do Cenário</Label>
             <Input
               id="name"
-              placeholder="e.g., Urban 5G @ 3.5GHz"
+              placeholder="Ex.: Urbano 5G @ 3.5GHz"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
@@ -98,14 +98,14 @@ export function SaveCalculationDialog({ type, parameters, results }: SaveCalcula
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={saveMutation.isPending}
             data-testid="button-confirm-save"
           >
-            {saveMutation.isPending ? "Saving..." : "Save"}
+            {saveMutation.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>

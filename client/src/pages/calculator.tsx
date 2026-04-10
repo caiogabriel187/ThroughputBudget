@@ -15,13 +15,12 @@ import {
 } from "recharts";
 import type { Calculation } from "@shared/schema";
 
-// ─── Path Loss Models ────────────────────────────────────────────────────────
+// ─── Modelos de Perda de Percurso ────────────────────────────────────────────
 function fspl(d_km: number, f_mhz: number): number {
   if (d_km <= 0) return 0;
   return 20 * Math.log10(d_km) + 20 * Math.log10(f_mhz) + 32.44;
 }
 
-// 3GPP TR 38.901 simplified models (d in km, f in MHz)
 function uma_los(d_km: number, f_mhz: number, hBS = 25, hUT = 1.5): number {
   const d_m = d_km * 1000;
   const f_ghz = f_mhz / 1000;
@@ -83,11 +82,11 @@ function computePathLoss(model: string, d_km: number, f_mhz: number, customPL = 
   }
 }
 
-// ─── Vendor Presets ──────────────────────────────────────────────────────────
+// ─── Presets de Fabricantes ───────────────────────────────────────────────────
 const VENDOR_PRESETS = {
   ericsson: {
     label: "Ericsson AIR 6449",
-    description: "3.5 GHz, 100 MHz TDD, 8×8 MIMO, 256QAM",
+    description: "3,5 GHz, 100 MHz TDD, 8×8 MIMO, 256QAM",
     params: {
       fr: "FR1", fddTdd: "TDD", numerology: 1, scs: 30, bwMHz: 100,
       aggregatedCarriers: 1, mimoLayers: 8, modulation: "256QAM",
@@ -97,7 +96,7 @@ const VENDOR_PRESETS = {
   },
   nokia: {
     label: "Nokia AirScale",
-    description: "3.5 GHz, 100 MHz TDD, CA×2, 256QAM",
+    description: "3,5 GHz, 100 MHz TDD, CA×2, 256QAM",
     params: {
       fr: "FR1", fddTdd: "TDD", numerology: 1, scs: 30, bwMHz: 100,
       aggregatedCarriers: 2, mimoLayers: 8, modulation: "256QAM",
@@ -107,7 +106,7 @@ const VENDOR_PRESETS = {
   },
   huawei: {
     label: "Huawei AAU5636",
-    description: "2.6 GHz, 100 MHz TDD, 64T64R, 256QAM",
+    description: "2,6 GHz, 100 MHz TDD, 64T64R, 256QAM",
     params: {
       fr: "FR1", fddTdd: "TDD", numerology: 1, scs: 30, bwMHz: 100,
       aggregatedCarriers: 1, mimoLayers: 16, modulation: "256QAM",
@@ -127,13 +126,13 @@ const VENDOR_PRESETS = {
   },
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Componente Principal ─────────────────────────────────────────────────────
 export default function Calculator() {
   const { toast } = useToast();
   const [mode, setMode] = useState<"throughput" | "linkbudget">("throughput");
   const [activeSection, setActiveSection] = useState<"calc" | "charts">("calc");
 
-  // Throughput state
+  // Estado — Throughput
   const [fr, setFr] = useState("FR1");
   const [fddTdd, setFddTdd] = useState("FDD");
   const [numerology, setNumerology] = useState(1);
@@ -150,7 +149,7 @@ export default function Calculator() {
   const [manualPRBs, setManualPRBs] = useState("");
   const [signalingOverhead, setSignalingOverhead] = useState(0.14);
 
-  // Link budget state
+  // Estado — Link Budget
   const [txPower, setTxPower] = useState(30);
   const [txGain, setTxGain] = useState(15);
   const [rxGain, setRxGain] = useState(0);
@@ -164,7 +163,7 @@ export default function Calculator() {
   const [noiseFigure, setNoiseFigure] = useState(7);
   const [rbBandwidthMHz, setRbBandwidthMHz] = useState(20);
 
-  // ─── Throughput calculations ────────────────────────────────────────────
+  // ─── Cálculos de Throughput ─────────────────────────────────────────────
   const modulationBits = useMemo(() => {
     switch (modulation) {
       case "QPSK": return 2;
@@ -202,7 +201,7 @@ export default function Calculator() {
     return Number.isFinite(raw) ? raw : 0;
   }, [bwMHz, spectralEfficiency, dlFraction, signalingOverhead, aggregatedCarriers]);
 
-  // ─── Link budget calculations ───────────────────────────────────────────
+  // ─── Cálculos de Link Budget ────────────────────────────────────────────
   const pathLoss = useMemo(
     () => computePathLoss(pathModel, distanceKm, frequency, customPathLoss),
     [pathModel, distanceKm, frequency, customPathLoss]
@@ -221,13 +220,12 @@ export default function Calculator() {
 
   const sinrDb = useMemo(() => receivedPower - noiseFloor, [receivedPower, noiseFloor]);
 
-  // ─── Chart data ─────────────────────────────────────────────────────────
+  // ─── Dados dos Gráficos ──────────────────────────────────────────────────
   const throughputChartData = useMemo(() => {
     const bandwidths = [5, 10, 15, 20, 25, 40, 50, 60, 80, 100, 200, 400];
     return bandwidths.map((bw) => {
-      const prbCount = Math.floor((bw * 1000) / (12 * scs));
       const tp = bw * spectralEfficiency * dlFraction * (1 - signalingOverhead) * aggregatedCarriers;
-      return { bw, throughput: Number.isFinite(tp) ? parseFloat(tp.toFixed(1)) : 0, prbs: prbCount };
+      return { bw, throughput: Number.isFinite(tp) ? parseFloat(tp.toFixed(1)) : 0 };
     });
   }, [scs, spectralEfficiency, dlFraction, signalingOverhead, aggregatedCarriers]);
 
@@ -244,7 +242,7 @@ export default function Calculator() {
     }));
   }, [frequency]);
 
-  // ─── Vendor preset loader ───────────────────────────────────────────────
+  // ─── Aplicar Preset de Fabricante ──────────────────────────────────────
   function applyVendorPreset(key: keyof typeof VENDOR_PRESETS) {
     const p = VENDOR_PRESETS[key].params;
     setFr(p.fr);
@@ -263,10 +261,10 @@ export default function Calculator() {
     setManualPRBs(p.manualPRBs);
     setSignalingOverhead(p.signalingOverhead);
     setMode("throughput");
-    toast({ title: "Preset loaded", description: VENDOR_PRESETS[key].label });
+    toast({ title: "Preset carregado", description: VENDOR_PRESETS[key].label });
   }
 
-  // ─── Export functions ───────────────────────────────────────────────────
+  // ─── Exportar CSV ───────────────────────────────────────────────────────
   function downloadCSV(rows: (string | number)[][], filename = "export.csv") {
     const csv = rows
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -282,65 +280,65 @@ export default function Calculator() {
 
   function exportThroughputCSV() {
     downloadCSV([
-      ["Parameter", "Value"],
-      ["Frequency Range", fr],
-      ["Duplex Mode", fddTdd],
-      ["Numerology", numerology],
-      ["Subcarrier Spacing (kHz)", scs],
-      ["Bandwidth (MHz)", bwMHz],
-      ["Aggregated Carriers", aggregatedCarriers],
-      ["PRBs (estimated)", prbs],
-      ["Modulation", modulation],
-      ["Code Rate", codeRate.toFixed(4)],
-      ["MIMO Layers", mimoLayers],
-      ["TBS Scaling", tbsScaling],
-      ["DL Fraction", dlFraction.toFixed(3)],
-      ["Signaling Overhead", signalingOverhead],
-      ["Spectral Efficiency (bits/s/Hz)", spectralEfficiency.toFixed(3)],
+      ["Parâmetro", "Valor"],
+      ["Faixa de Frequência", fr],
+      ["Modo Duplex", fddTdd],
+      ["Numerologia", numerology],
+      ["Espaçamento de Subportadora (kHz)", scs],
+      ["Largura de Banda (MHz)", bwMHz],
+      ["Portadoras Agregadas", aggregatedCarriers],
+      ["PRBs (estimado)", prbs],
+      ["Modulação", modulation],
+      ["Taxa de Código", codeRate.toFixed(4)],
+      ["Camadas MIMO", mimoLayers],
+      ["Escala TBS", tbsScaling],
+      ["Fração DL", dlFraction.toFixed(3)],
+      ["Overhead de Sinalização", signalingOverhead],
+      ["Eficiência Espectral (bits/s/Hz)", spectralEfficiency.toFixed(3)],
       ["Throughput (Mbps)", throughputMbps.toFixed(2)],
     ], "5g-throughput-export.csv");
-    toast({ title: "Export successful", description: "Throughput data exported to CSV" });
+    toast({ title: "Exportação concluída", description: "Dados de throughput exportados para CSV" });
   }
 
   function exportLinkBudgetCSV() {
     downloadCSV([
-      ["Parameter", "Value"],
-      ["Tx Power (dBm)", txPower],
-      ["Tx Gain (dBi)", txGain],
-      ["Tx Cable Loss (dB)", txCableLoss],
-      ["Rx Gain (dBi)", rxGain],
-      ["Rx Cable Loss (dB)", rxCableLoss],
-      ["Other Losses (dB)", otherLosses],
-      ["Frequency (MHz)", frequency],
-      ["Distance (km)", distanceKm],
-      ["Path Loss Model", pathModel.toUpperCase()],
-      ["Path Loss (dB)", pathLoss.toFixed(2)],
-      ["Received Power (dBm)", receivedPower.toFixed(2)],
-      ["Noise Figure (dB)", noiseFigure],
-      ["Receiver Bandwidth (MHz)", rbBandwidthMHz],
-      ["Noise Floor (dBm)", noiseFloor.toFixed(2)],
+      ["Parâmetro", "Valor"],
+      ["Potência Tx (dBm)", txPower],
+      ["Ganho Tx (dBi)", txGain],
+      ["Perda no Cabo Tx (dB)", txCableLoss],
+      ["Ganho Rx (dBi)", rxGain],
+      ["Perda no Cabo Rx (dB)", rxCableLoss],
+      ["Outras Perdas (dB)", otherLosses],
+      ["Frequência (MHz)", frequency],
+      ["Distância (km)", distanceKm],
+      ["Modelo de Perda de Percurso", pathModel.toUpperCase()],
+      ["Perda de Percurso (dB)", pathLoss.toFixed(2)],
+      ["Potência Recebida (dBm)", receivedPower.toFixed(2)],
+      ["Figura de Ruído (dB)", noiseFigure],
+      ["Largura de Banda do Receptor (MHz)", rbBandwidthMHz],
+      ["Piso de Ruído (dBm)", noiseFloor.toFixed(2)],
       ["SINR (dB)", sinrDb.toFixed(2)],
     ], "5g-linkbudget-export.csv");
-    toast({ title: "Export successful", description: "Link budget data exported to CSV" });
+    toast({ title: "Exportação concluída", description: "Dados de link budget exportados para CSV" });
   }
 
   function copyThroughputResults() {
-    const text = `5G NR Throughput Results\nThroughput: ${throughputMbps.toFixed(2)} Mbps\nPRBs: ${prbs}\nSpectral Efficiency: ${spectralEfficiency.toFixed(3)} bits/s/Hz\nDL Fraction: ${dlFraction.toFixed(3)}`;
+    const text = `Resultados de Throughput 5G NR\nThroughput: ${throughputMbps.toFixed(2)} Mbps\nPRBs: ${prbs}\nEficiência Espectral: ${spectralEfficiency.toFixed(3)} bits/s/Hz\nFração DL: ${dlFraction.toFixed(3)}`;
     navigator.clipboard?.writeText(text).then(
-      () => toast({ title: "Copied to clipboard", description: "Results copied successfully" }),
-      () => toast({ title: "Copy failed", description: "Could not copy to clipboard", variant: "destructive" })
+      () => toast({ title: "Copiado!", description: "Resultados copiados para a área de transferência" }),
+      () => toast({ title: "Falha ao copiar", description: "Não foi possível copiar", variant: "destructive" })
     );
   }
 
   function copyLinkBudgetResults() {
-    const text = `5G NR Link Budget Results\nReceived Power: ${receivedPower.toFixed(2)} dBm\nPath Loss: ${pathLoss.toFixed(2)} dB\nNoise Floor: ${noiseFloor.toFixed(2)} dBm\nSINR: ${sinrDb.toFixed(2)} dB`;
+    const text = `Resultados de Link Budget 5G NR\nPotência Recebida: ${receivedPower.toFixed(2)} dBm\nPerda de Percurso: ${pathLoss.toFixed(2)} dB\nPiso de Ruído: ${noiseFloor.toFixed(2)} dBm\nSINR: ${sinrDb.toFixed(2)} dB`;
     navigator.clipboard?.writeText(text).then(
-      () => toast({ title: "Copied to clipboard", description: "Results copied successfully" }),
-      () => toast({ title: "Copy failed", description: "Could not copy to clipboard", variant: "destructive" })
+      () => toast({ title: "Copiado!", description: "Resultados copiados para a área de transferência" }),
+      () => toast({ title: "Falha ao copiar", description: "Não foi possível copiar", variant: "destructive" })
     );
   }
 
-  // ─── Load from history ──────────────────────────────────────────────────
+  // ─── Carregar do Histórico ──────────────────────────────────────────────
   function loadCalculation(calculation: Calculation) {
     if (calculation.type === "throughput") {
       const p = calculation.parameters as any;
@@ -360,7 +358,7 @@ export default function Calculator() {
       setNoiseFigure(p.noiseFigure); setRbBandwidthMHz(p.rbBandwidthMHz);
       setMode("linkbudget");
     }
-    toast({ title: "Scenario loaded", description: `Loaded "${calculation.name}"` });
+    toast({ title: "Cenário carregado", description: `"${calculation.name}" carregado com sucesso` });
   }
 
   const throughputData = {
@@ -380,21 +378,20 @@ export default function Calculator() {
     results: { pathLoss, receivedPower, noiseFloor, sinr: sinrDb },
   };
 
-  // SINR quality helper
-  const sinrQuality = sinrDb >= 20 ? { label: "Excellent", color: "text-green-600" }
-    : sinrDb >= 10 ? { label: "Good", color: "text-blue-600" }
+  const sinrQuality = sinrDb >= 20 ? { label: "Excelente", color: "text-green-600" }
+    : sinrDb >= 10 ? { label: "Bom", color: "text-blue-600" }
     : sinrDb >= 0 ? { label: "Marginal", color: "text-yellow-600" }
-    : { label: "Poor", color: "text-red-600" };
+    : { label: "Ruim", color: "text-red-600" };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Header */}
+        {/* Cabeçalho */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">5G NR Calculator</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">Calculadora 5G NR</h1>
             <p className="text-sm text-muted-foreground">
-              Professional throughput and link budget analysis for RF engineers
+              Análise profissional de throughput e link budget para engenheiros de RF
             </p>
           </div>
           <a
@@ -407,12 +404,12 @@ export default function Calculator() {
           </a>
         </div>
 
-        {/* Vendor Presets */}
+        {/* Presets de Fabricantes */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Zap className="w-4 h-4" />
-              Vendor Presets
+              Presets de Fabricantes
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -437,9 +434,9 @@ export default function Calculator() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Area */}
+          {/* Área Principal */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Section Toggle */}
+            {/* Alternar Seção */}
             <div className="flex gap-2">
               <Button
                 variant={activeSection === "calc" ? "default" : "outline"}
@@ -447,7 +444,7 @@ export default function Calculator() {
                 onClick={() => setActiveSection("calc")}
                 data-testid="button-section-calc"
               >
-                Calculator
+                Calculadora
               </Button>
               <Button
                 variant={activeSection === "charts" ? "default" : "outline"}
@@ -456,7 +453,7 @@ export default function Calculator() {
                 data-testid="button-section-charts"
               >
                 <BarChart2 className="w-4 h-4 mr-1" />
-                Charts
+                Gráficos
               </Button>
             </div>
 
@@ -467,19 +464,19 @@ export default function Calculator() {
                   <TabsTrigger value="linkbudget" data-testid="tab-linkbudget">Link Budget</TabsTrigger>
                 </TabsList>
 
-                {/* ── Throughput Calculator ── */}
+                {/* ── Calculadora de Throughput ── */}
                 <TabsContent value="throughput" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Throughput Parameters</CardTitle>
-                      <CardDescription>Configure 5G NR physical layer parameters</CardDescription>
+                      <CardTitle>Parâmetros de Throughput</CardTitle>
+                      <CardDescription>Configure os parâmetros da camada física 5G NR</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Col 1: RF */}
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="fr">Frequency Range</Label>
+                            <Label htmlFor="fr">Faixa de Frequência</Label>
                             <Select value={fr} onValueChange={setFr}>
                               <SelectTrigger id="fr" data-testid="select-fr"><SelectValue /></SelectTrigger>
                               <SelectContent>
@@ -489,7 +486,7 @@ export default function Calculator() {
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="fddtdd">Duplex Mode</Label>
+                            <Label htmlFor="fddtdd">Modo Duplex</Label>
                             <Select value={fddTdd} onValueChange={setFddTdd}>
                               <SelectTrigger id="fddtdd" data-testid="select-duplex"><SelectValue /></SelectTrigger>
                               <SelectContent>
@@ -499,12 +496,12 @@ export default function Calculator() {
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="numerology">Numerology (μ)</Label>
+                            <Label htmlFor="numerology">Numerologia (μ)</Label>
                             <Input id="numerology" type="number" min="0" max="4" value={numerology}
                               onChange={(e) => setNumerology(Number(e.target.value))} data-testid="input-numerology" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="scs">Subcarrier Spacing (kHz)</Label>
+                            <Label htmlFor="scs">Espaçamento de Subportadora (kHz)</Label>
                             <Select value={String(scs)} onValueChange={(v) => setScs(Number(v))}>
                               <SelectTrigger id="scs" data-testid="select-scs"><SelectValue /></SelectTrigger>
                               <SelectContent>
@@ -516,26 +513,26 @@ export default function Calculator() {
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="bandwidth">Bandwidth (MHz)</Label>
+                            <Label htmlFor="bandwidth">Largura de Banda (MHz)</Label>
                             <Input id="bandwidth" type="number" value={bwMHz}
                               onChange={(e) => setBwMHz(Number(e.target.value))} data-testid="input-bandwidth" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="carriers">Aggregated Carriers</Label>
+                            <Label htmlFor="carriers">Portadoras Agregadas</Label>
                             <Input id="carriers" type="number" min="1" value={aggregatedCarriers}
                               onChange={(e) => setAggregatedCarriers(Number(e.target.value))} data-testid="input-carriers" />
                           </div>
                         </div>
 
-                        {/* Col 2: Modulation */}
+                        {/* Col 2: Modulação */}
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="prbs">PRBs (leave empty for auto)</Label>
-                            <Input id="prbs" type="text" placeholder="Auto-calculated" value={manualPRBs}
+                            <Label htmlFor="prbs">PRBs (deixe vazio para automático)</Label>
+                            <Input id="prbs" type="text" placeholder="Calculado automaticamente" value={manualPRBs}
                               onChange={(e) => setManualPRBs(e.target.value)} data-testid="input-prbs" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="modulation">Modulation</Label>
+                            <Label htmlFor="modulation">Modulação</Label>
                             <Select value={modulation} onValueChange={setModulation}>
                               <SelectTrigger id="modulation" data-testid="select-modulation"><SelectValue /></SelectTrigger>
                               <SelectContent>
@@ -548,22 +545,22 @@ export default function Calculator() {
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="coderate">Code Rate</Label>
+                            <Label htmlFor="coderate">Taxa de Código</Label>
                             <Input id="coderate" type="number" step="0.001" min="0" max="1" value={codeRate}
                               onChange={(e) => setCodeRate(Number(e.target.value))} data-testid="input-coderate" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="mimo">MIMO Layers</Label>
+                            <Label htmlFor="mimo">Camadas MIMO</Label>
                             <Input id="mimo" type="number" min="1" value={mimoLayers}
                               onChange={(e) => setMimoLayers(Number(e.target.value))} data-testid="input-mimo" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="tbsscaling">TBS Scaling</Label>
+                            <Label htmlFor="tbsscaling">Escala TBS</Label>
                             <Input id="tbsscaling" type="number" step="0.01" value={tbsScaling}
                               onChange={(e) => setTbsScaling(Number(e.target.value))} data-testid="input-tbs" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="beams">Number of Beams</Label>
+                            <Label htmlFor="beams">Número de Feixes</Label>
                             <Input id="beams" type="number" min="1" value={numBeams}
                               onChange={(e) => setNumBeams(Number(e.target.value))} data-testid="input-beams" />
                           </div>
@@ -572,26 +569,26 @@ export default function Calculator() {
                         {/* Col 3: TDD */}
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="slotformat">TDD Slot Format</Label>
+                            <Label htmlFor="slotformat">Formato de Slot TDD</Label>
                             <Select value={slotFormat} onValueChange={setSlotFormat}>
                               <SelectTrigger id="slotformat" data-testid="select-slotformat"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="fullDL">All DL (or FDD)</SelectItem>
-                                <SelectItem value="mixed">Mixed DL/UL (75%)</SelectItem>
-                                <SelectItem value="45">Pattern 45 (43%)</SelectItem>
-                                <SelectItem value="special">Custom DL Fraction</SelectItem>
+                                <SelectItem value="fullDL">Todo DL (ou FDD)</SelectItem>
+                                <SelectItem value="mixed">Misto DL/UL (75%)</SelectItem>
+                                <SelectItem value="45">Padrão 45 (43%)</SelectItem>
+                                <SelectItem value="special">Fração DL Personalizada</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           {slotFormat === "special" && (
                             <div className="space-y-2">
-                              <Label htmlFor="dlfraction">DL Fraction (0–1)</Label>
+                              <Label htmlFor="dlfraction">Fração DL (0–1)</Label>
                               <Input id="dlfraction" type="number" step="0.01" min="0" max="1" value={customDlFraction}
                                 onChange={(e) => setCustomDlFraction(Number(e.target.value))} data-testid="input-dlfraction" />
                             </div>
                           )}
                           <div className="space-y-2">
-                            <Label htmlFor="overhead">Signaling Overhead</Label>
+                            <Label htmlFor="overhead">Overhead de Sinalização</Label>
                             <Input id="overhead" type="number" step="0.01" min="0" max="1" value={signalingOverhead}
                               onChange={(e) => setSignalingOverhead(Number(e.target.value))} data-testid="input-overhead" />
                           </div>
@@ -600,27 +597,27 @@ export default function Calculator() {
                     </CardContent>
                   </Card>
 
-                  {/* Throughput Results */}
+                  {/* Resultados de Throughput */}
                   <Card className="bg-muted/30">
                     <CardHeader>
-                      <CardTitle>Results</CardTitle>
-                      <CardDescription>Calculated throughput and intermediate values</CardDescription>
+                      <CardTitle>Resultados</CardTitle>
+                      <CardDescription>Throughput calculado e valores intermediários</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Estimated PRBs</div>
+                          <div className="text-xs text-muted-foreground">PRBs Estimados</div>
                           <div className="text-2xl font-mono font-semibold" data-testid="result-prbs">{prbs}</div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Spectral Efficiency</div>
+                          <div className="text-xs text-muted-foreground">Eficiência Espectral</div>
                           <div className="text-2xl font-mono font-semibold" data-testid="result-spectral">
                             {spectralEfficiency.toFixed(3)}
                           </div>
                           <div className="text-xs text-muted-foreground">bits/s/Hz</div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">DL Fraction</div>
+                          <div className="text-xs text-muted-foreground">Fração DL</div>
                           <div className="text-2xl font-mono font-semibold" data-testid="result-dlfraction">
                             {dlFraction.toFixed(3)}
                           </div>
@@ -636,76 +633,76 @@ export default function Calculator() {
                       <div className="flex gap-2 flex-wrap">
                         <SaveCalculationDialog type="throughput" parameters={throughputData.parameters} results={throughputData.results} />
                         <Button variant="default" onClick={copyThroughputResults} data-testid="button-copy-throughput">
-                          <Copy className="w-4 h-4 mr-2" />Copy Results
+                          <Copy className="w-4 h-4 mr-2" />Copiar Resultados
                         </Button>
                         <Button variant="secondary" onClick={exportThroughputCSV} data-testid="button-export-throughput">
-                          <Download className="w-4 h-4 mr-2" />Export CSV
+                          <Download className="w-4 h-4 mr-2" />Exportar CSV
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Approximate 3GPP methodology. PRB estimation uses BW / (12 × SCS). Consult 3GPP TS 38.306 for production calculations.
+                        Metodologia aproximada 3GPP. Estimativa de PRB usa LB / (12 × SCS). Consulte 3GPP TS 38.306 para cálculos de produção.
                       </p>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
-                {/* ── Link Budget Calculator ── */}
+                {/* ── Calculadora de Link Budget ── */}
                 <TabsContent value="linkbudget" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Link Budget Parameters</CardTitle>
-                      <CardDescription>Configure transmitter, receiver, and propagation parameters</CardDescription>
+                      <CardTitle>Parâmetros de Link Budget</CardTitle>
+                      <CardDescription>Configure os parâmetros de transmissão, recepção e propagação</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Col 1 */}
                         <div className="space-y-4">
-                          <h3 className="text-sm font-medium text-muted-foreground">Transmitter</h3>
+                          <h3 className="text-sm font-medium text-muted-foreground">Transmissor</h3>
                           <div className="space-y-2">
-                            <Label htmlFor="txpower">Tx Power (dBm)</Label>
+                            <Label htmlFor="txpower">Potência Tx (dBm)</Label>
                             <Input id="txpower" type="number" value={txPower}
                               onChange={(e) => setTxPower(Number(e.target.value))} data-testid="input-txpower" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="txgain">Tx Gain (dBi)</Label>
+                            <Label htmlFor="txgain">Ganho Tx (dBi)</Label>
                             <Input id="txgain" type="number" value={txGain}
                               onChange={(e) => setTxGain(Number(e.target.value))} data-testid="input-txgain" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="txcableloss">Tx Cable Loss (dB)</Label>
+                            <Label htmlFor="txcableloss">Perda no Cabo Tx (dB)</Label>
                             <Input id="txcableloss" type="number" value={txCableLoss}
                               onChange={(e) => setTxCableLoss(Number(e.target.value))} data-testid="input-txcableloss" />
                           </div>
-                          <h3 className="text-sm font-medium text-muted-foreground pt-4">Propagation</h3>
+                          <h3 className="text-sm font-medium text-muted-foreground pt-4">Propagação</h3>
                           <div className="space-y-2">
-                            <Label htmlFor="freq">Frequency (MHz)</Label>
+                            <Label htmlFor="freq">Frequência (MHz)</Label>
                             <Input id="freq" type="number" value={frequency}
                               onChange={(e) => setFrequency(Number(e.target.value))} data-testid="input-frequency" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="distance">Distance (km)</Label>
+                            <Label htmlFor="distance">Distância (km)</Label>
                             <Input id="distance" type="number" step="0.001" value={distanceKm}
                               onChange={(e) => setDistanceKm(Number(e.target.value))} data-testid="input-distance" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="pathmodel">Path Loss Model</Label>
+                            <Label htmlFor="pathmodel">Modelo de Perda de Percurso</Label>
                             <Select value={pathModel} onValueChange={setPathModel}>
                               <SelectTrigger id="pathmodel" data-testid="select-pathmodel"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="fspl">FSPL (Free Space)</SelectItem>
+                                <SelectItem value="fspl">FSPL (Espaço Livre)</SelectItem>
                                 <SelectItem value="uma_los">3GPP UMa LOS</SelectItem>
                                 <SelectItem value="uma_nlos">3GPP UMa NLOS</SelectItem>
                                 <SelectItem value="umi_los">3GPP UMi LOS</SelectItem>
                                 <SelectItem value="umi_nlos">3GPP UMi NLOS</SelectItem>
                                 <SelectItem value="rma_los">3GPP RMa LOS</SelectItem>
                                 <SelectItem value="indoor_los">3GPP Indoor LOS</SelectItem>
-                                <SelectItem value="custom">Custom Path Loss</SelectItem>
+                                <SelectItem value="custom">Perda Personalizada</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           {pathModel === "custom" && (
                             <div className="space-y-2">
-                              <Label htmlFor="custompathloss">Custom Path Loss (dB)</Label>
+                              <Label htmlFor="custompathloss">Perda de Percurso Personalizada (dB)</Label>
                               <Input id="custompathloss" type="number" value={customPathLoss}
                                 onChange={(e) => setCustomPathLoss(Number(e.target.value))} data-testid="input-custompathloss" />
                             </div>
@@ -714,71 +711,71 @@ export default function Calculator() {
 
                         {/* Col 2 */}
                         <div className="space-y-4">
-                          <h3 className="text-sm font-medium text-muted-foreground">Receiver</h3>
+                          <h3 className="text-sm font-medium text-muted-foreground">Receptor</h3>
                           <div className="space-y-2">
-                            <Label htmlFor="rxgain">Rx Gain (dBi)</Label>
+                            <Label htmlFor="rxgain">Ganho Rx (dBi)</Label>
                             <Input id="rxgain" type="number" value={rxGain}
                               onChange={(e) => setRxGain(Number(e.target.value))} data-testid="input-rxgain" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="rxcableloss">Rx Cable Loss (dB)</Label>
+                            <Label htmlFor="rxcableloss">Perda no Cabo Rx (dB)</Label>
                             <Input id="rxcableloss" type="number" value={rxCableLoss}
                               onChange={(e) => setRxCableLoss(Number(e.target.value))} data-testid="input-rxcableloss" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="otherloss">Other Losses (dB)</Label>
+                            <Label htmlFor="otherloss">Outras Perdas (dB)</Label>
                             <Input id="otherloss" type="number" value={otherLosses}
                               onChange={(e) => setOtherLosses(Number(e.target.value))} data-testid="input-otherloss" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="noisefig">Noise Figure (dB)</Label>
+                            <Label htmlFor="noisefig">Figura de Ruído (dB)</Label>
                             <Input id="noisefig" type="number" value={noiseFigure}
                               onChange={(e) => setNoiseFigure(Number(e.target.value))} data-testid="input-noisefig" />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="rxbandwidth">Receiver Bandwidth (MHz)</Label>
+                            <Label htmlFor="rxbandwidth">Largura de Banda do Receptor (MHz)</Label>
                             <Input id="rxbandwidth" type="number" value={rbBandwidthMHz}
                               onChange={(e) => setRbBandwidthMHz(Number(e.target.value))} data-testid="input-rxbandwidth" />
                           </div>
-                          {/* Path loss model info */}
+                          {/* Informações do modelo de perda */}
                           <div className="mt-4 p-3 rounded-md bg-muted/50 text-xs text-muted-foreground space-y-1">
-                            <div className="font-medium text-foreground">Model Reference</div>
-                            {pathModel === "fspl" && <p>Free Space Path Loss. Assumes clear LOS, no reflections.</p>}
-                            {pathModel.startsWith("uma") && <p>3GPP TR 38.901 Urban Macro: hBS=25m, hUT=1.5m.</p>}
-                            {pathModel.startsWith("umi") && <p>3GPP TR 38.901 Urban Micro: hBS=10m, hUT=1.5m.</p>}
-                            {pathModel === "rma_los" && <p>3GPP TR 38.901 Rural Macro LOS: avg building height 5m.</p>}
-                            {pathModel === "indoor_los" && <p>3GPP TR 38.901 Indoor Factory LOS.</p>}
-                            {pathModel === "custom" && <p>User-defined constant path loss value.</p>}
+                            <div className="font-medium text-foreground">Referência do Modelo</div>
+                            {pathModel === "fspl" && <p>Perda no Espaço Livre. Assume LOS limpa, sem reflexões.</p>}
+                            {pathModel.startsWith("uma") && <p>3GPP TR 38.901 Macro Urbano: hBS=25m, hUT=1,5m.</p>}
+                            {pathModel.startsWith("umi") && <p>3GPP TR 38.901 Micro Urbano: hBS=10m, hUT=1,5m.</p>}
+                            {pathModel === "rma_los" && <p>3GPP TR 38.901 Macro Rural LOS: altura média de edificações 5m.</p>}
+                            {pathModel === "indoor_los" && <p>3GPP TR 38.901 Indoor (Fábrica) LOS.</p>}
+                            {pathModel === "custom" && <p>Valor de perda de percurso definido pelo usuário.</p>}
                           </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* Link Budget Results */}
+                  {/* Resultados de Link Budget */}
                   <Card className="bg-muted/30">
                     <CardHeader>
-                      <CardTitle>Results</CardTitle>
-                      <CardDescription>Calculated link budget and signal quality</CardDescription>
+                      <CardTitle>Resultados</CardTitle>
+                      <CardDescription>Link budget calculado e qualidade do sinal</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Path Loss</div>
+                          <div className="text-xs text-muted-foreground">Perda de Percurso</div>
                           <div className="text-2xl font-mono font-semibold" data-testid="result-pathloss">
                             {pathLoss.toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground">dB</div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Received Power</div>
+                          <div className="text-xs text-muted-foreground">Potência Recebida</div>
                           <div className="text-2xl font-mono font-semibold text-primary" data-testid="result-rxpower">
                             {receivedPower.toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground">dBm</div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Noise Floor</div>
+                          <div className="text-xs text-muted-foreground">Piso de Ruído</div>
                           <div className="text-2xl font-mono font-semibold" data-testid="result-noisefloor">
                             {noiseFloor.toFixed(2)}
                           </div>
@@ -798,14 +795,14 @@ export default function Calculator() {
                       <div className="flex gap-2 flex-wrap">
                         <SaveCalculationDialog type="linkbudget" parameters={linkBudgetData.parameters} results={linkBudgetData.results} />
                         <Button variant="default" onClick={copyLinkBudgetResults} data-testid="button-copy-linkbudget">
-                          <Copy className="w-4 h-4 mr-2" />Copy Results
+                          <Copy className="w-4 h-4 mr-2" />Copiar Resultados
                         </Button>
                         <Button variant="secondary" onClick={exportLinkBudgetCSV} data-testid="button-export-linkbudget">
-                          <Download className="w-4 h-4 mr-2" />Export CSV
+                          <Download className="w-4 h-4 mr-2" />Exportar CSV
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        3GPP TR 38.901 path loss models assume LOS/NLOS conditions as labeled. FSPL assumes free-space line-of-sight.
+                        Modelos de perda 3GPP TR 38.901 assumem condições LOS/NLOS conforme indicado. FSPL assume linha de visada em espaço livre.
                       </p>
                     </CardContent>
                   </Card>
@@ -813,15 +810,15 @@ export default function Calculator() {
               </Tabs>
             )}
 
-            {/* ── Charts Section ── */}
+            {/* ── Seção de Gráficos ── */}
             {activeSection === "charts" && (
               <div className="space-y-6">
-                {/* Throughput vs Bandwidth */}
+                {/* Throughput vs Largura de Banda */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Throughput vs Bandwidth</CardTitle>
+                    <CardTitle>Throughput vs Largura de Banda</CardTitle>
                     <CardDescription>
-                      DL throughput sweep across standard 5G NR bandwidths with current modulation &amp; MIMO settings
+                      Varredura de throughput DL nas larguras de banda padrão 5G NR com as configurações atuais de modulação e MIMO
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -829,7 +826,7 @@ export default function Calculator() {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={throughputChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis dataKey="bw" label={{ value: "Bandwidth (MHz)", position: "insideBottom", offset: -2 }}
+                          <XAxis dataKey="bw" label={{ value: "Largura de Banda (MHz)", position: "insideBottom", offset: -2 }}
                             tick={{ fontSize: 11 }} />
                           <YAxis label={{ value: "Throughput (Mbps)", angle: -90, position: "insideLeft", offset: 10 }}
                             tick={{ fontSize: 11 }} />
@@ -840,17 +837,17 @@ export default function Calculator() {
                       </ResponsiveContainer>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Current settings: {modulation}, {mimoLayers}×MIMO, {fddTdd}, DL={dlFraction.toFixed(2)}, overhead={signalingOverhead}
+                      Configuração atual: {modulation}, {mimoLayers}×MIMO, {fddTdd}, DL={dlFraction.toFixed(2)}, overhead={signalingOverhead}
                     </p>
                   </CardContent>
                 </Card>
 
-                {/* Path Loss vs Distance */}
+                {/* Perda de Percurso vs Distância */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Path Loss vs Distance</CardTitle>
+                    <CardTitle>Perda de Percurso vs Distância</CardTitle>
                     <CardDescription>
-                      Comparison of all propagation models at {frequency} MHz
+                      Comparação de todos os modelos de propagação a {frequency} MHz
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -858,9 +855,9 @@ export default function Calculator() {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={pathLossChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis dataKey="d" label={{ value: "Distance (km)", position: "insideBottom", offset: -2 }}
+                          <XAxis dataKey="d" label={{ value: "Distância (km)", position: "insideBottom", offset: -2 }}
                             tick={{ fontSize: 11 }} />
-                          <YAxis label={{ value: "Path Loss (dB)", angle: -90, position: "insideLeft", offset: 10 }}
+                          <YAxis label={{ value: "Perda de Percurso (dB)", angle: -90, position: "insideLeft", offset: 10 }}
                             tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
                           <Tooltip formatter={(v) => [`${v} dB`]} labelFormatter={(l) => `${l} km`} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -874,7 +871,7 @@ export default function Calculator() {
                       </ResponsiveContainer>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Models based on 3GPP TR 38.901 Table 7.4.1. Change frequency in the Link Budget tab to update this chart.
+                      Modelos baseados na Tabela 7.4.1 do 3GPP TR 38.901. Altere a frequência na aba Link Budget para atualizar este gráfico.
                     </p>
                   </CardContent>
                 </Card>
@@ -882,14 +879,14 @@ export default function Calculator() {
             )}
           </div>
 
-          {/* History Sidebar */}
+          {/* Barra Lateral — Histórico */}
           <div className="lg:col-span-1">
             <CalculationHistory type={activeSection === "calc" ? mode : undefined} onLoad={loadCalculation} />
           </div>
         </div>
 
         <div className="mt-8 text-center text-xs text-muted-foreground">
-          <p>Professional 5G NR calculator for RF engineering analysis</p>
+          <p>Calculadora 5G NR profissional para análise de engenharia de RF</p>
         </div>
       </div>
     </div>

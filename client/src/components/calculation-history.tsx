@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Calculation } from "@shared/schema";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface CalculationHistoryProps {
   type?: "throughput" | "linkbudget";
@@ -28,7 +29,7 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
       if (type) queryParams.set("type", type);
       const url = `/api/calculations?${queryParams.toString()}`;
       const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to load calculations");
+      if (!response.ok) throw new Error("Falha ao carregar cálculos");
       return response.json();
     },
   });
@@ -40,14 +41,14 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calculations"] });
       toast({
-        title: "Deleted",
-        description: "Calculation removed from history",
+        title: "Removido",
+        description: "Cálculo removido do histórico",
       });
     },
     onError: () => {
       toast({
-        title: "Delete failed",
-        description: "Could not delete calculation",
+        title: "Erro ao remover",
+        description: "Não foi possível remover o cálculo",
         variant: "destructive",
       });
     },
@@ -62,14 +63,14 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-5 h-5" />
-          Calculation History
+          Histórico de Cálculos
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search scenarios..."
+            placeholder="Buscar cenários..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -79,11 +80,11 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
 
         {isLoading ? (
           <div className="text-sm text-muted-foreground text-center py-8">
-            Loading history...
+            Carregando histórico...
           </div>
         ) : filteredCalculations.length === 0 ? (
           <div className="text-sm text-muted-foreground text-center py-8">
-            {searchQuery ? "No matching scenarios" : "No saved calculations yet"}
+            {searchQuery ? "Nenhum cenário encontrado" : "Nenhum cálculo salvo ainda"}
           </div>
         ) : (
           <ScrollArea className="h-[400px] pr-4">
@@ -103,7 +104,7 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(calc.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                      {format(new Date(calc.createdAt), "d 'de' MMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
@@ -113,7 +114,7 @@ export function CalculationHistory({ type, onLoad }: CalculationHistoryProps) {
                       onClick={() => onLoad(calc)}
                       data-testid={`button-load-${calc.id}`}
                     >
-                      Load
+                      Carregar
                     </Button>
                     <Button
                       size="sm"
