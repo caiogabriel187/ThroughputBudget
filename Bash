@@ -1,0 +1,4 @@
+git checkout main
+git pull origin main
+git merge minha-feature
+git push origin main
