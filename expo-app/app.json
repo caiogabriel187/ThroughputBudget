@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Calculadora 5G NR",
+    "slug": "calculadora-5g-nr",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0066cc"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.calculadora5gnr"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0066cc"
+      },
+      "package": "com.calculadora5gnr"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    }
+  }
+}
