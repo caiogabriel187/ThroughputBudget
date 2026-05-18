@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Altere para o IP/URL do seu servidor backend
-// Durante desenvolvimento local: use o IP da sua máquina (ex: http://192.168.1.x:5000)
-// Em produção: use a URL do servidor hospedado
-const BASE_URL = 'http://localhost:5000';
+// Servidor rodando no Replit — URL pública estável após publicar o projeto
+// Para usar: clique em "Publicar" no Replit e substitua pela URL gerada (ex: https://seu-app.replit.app)
+// Enquanto estiver em desenvolvimento no Replit, use a URL abaixo (visível no painel de preview)
+const BASE_URL = 'https://5e237d7a-1a5a-4a74-8414-562ff319b1ea-00-2wnc16uxaddng.spock.replit.dev';
 
 const api = axios.create({
   baseURL: BASE_URL,
