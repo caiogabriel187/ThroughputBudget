@@ -135,7 +135,10 @@ export default function HistoryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0066cc" />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📋</Text>
+            <View style={styles.emptyIcon}>
+              <Text style={styles.emptyIconText}>SEM</Text>
+              <Text style={styles.emptyIconText}>DADOS</Text>
+            </View>
             <Text style={styles.emptyTitle}>Nenhum cenário encontrado</Text>
             <Text style={styles.emptySubtitle}>
               {searchQuery
@@ -193,7 +196,21 @@ const styles = StyleSheet.create({
   filterBtnTextActive: { color: '#ffffff' },
   listContent: { padding: 12, gap: 8 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyIconText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94a3b8',
+    letterSpacing: 1,
+  },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
   emptySubtitle: { fontSize: 13, color: '#64748b', textAlign: 'center' },
 });
