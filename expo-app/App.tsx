@@ -25,10 +25,10 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
     <View style={styles.iconContainer}>
-      <Text style={[styles.iconText, focused && styles.iconFocused]}>{name}</Text>
+      <Text style={[styles.iconText, focused && styles.iconFocused]}>{label}</Text>
     </View>
   );
 }
@@ -59,7 +59,7 @@ function TabNavigator() {
         initialParams={{ mode: 'throughput' }}
         options={{
           title: 'Throughput',
-          tabBarIcon: ({ focused }) => <TabIcon name="📶" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="TP" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -68,15 +68,15 @@ function TabNavigator() {
         initialParams={{ mode: 'linkbudget' }}
         options={{
           title: 'Link Budget',
-          tabBarIcon: ({ focused }) => <TabIcon name="📡" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="LB" focused={focused} />,
         }}
       />
       <Tab.Screen
         name="Historico"
         component={HistoryScreen}
         options={{
-          title: 'Histórico',
-          tabBarIcon: ({ focused }) => <TabIcon name="🕐" focused={focused} />,
+          title: 'Historico',
+          tabBarIcon: ({ focused }) => <TabIcon label="HIS" focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -102,12 +102,12 @@ export default function App() {
           <Stack.Screen
             name="Save"
             component={SaveScreen}
-            options={{ title: 'Salvar Cenário' }}
+            options={{ title: 'Salvar Cenario' }}
           />
           <Stack.Screen
             name="Detail"
             component={DetailScreen}
-            options={{ title: 'Detalhes do Cenário' }}
+            options={{ title: 'Detalhes do Cenario' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
@@ -122,9 +122,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconText: {
-    fontSize: 20,
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
   },
   iconFocused: {
-    opacity: 1,
+    color: '#0066cc',
   },
 });
