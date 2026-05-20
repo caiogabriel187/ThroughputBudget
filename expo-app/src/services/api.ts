@@ -47,6 +47,11 @@ export const calculationsApi = {
     return response.data;
   },
 
+  update: async (id: string, name: string): Promise<Calculation> => {
+    const response = await api.put<Calculation>(`/api/calculations/${id}`, { name });
+    return response.data;
+  },
+
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/calculations/${id}`);
   },

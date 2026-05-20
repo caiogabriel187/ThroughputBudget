@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Image,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -290,6 +291,17 @@ export default function HomeScreen() {
   if (mode === 'throughput') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.banner}>
+          <Image
+            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/5G_logo.svg/120px-5G_logo.svg.png' }}
+            style={styles.bannerLogo}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.bannerTitle}>Throughput DL 5G NR</Text>
+            <Text style={styles.bannerSub}>Cálculo por largura de banda e MIMO</Text>
+          </View>
+        </View>
         <Text style={styles.sectionTitle}>Parâmetros de Throughput</Text>
 
         <View style={styles.card}>
@@ -327,6 +339,17 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.banner}>
+        <Image
+          source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/5G_logo.svg/120px-5G_logo.svg.png' }}
+          style={styles.bannerLogo}
+          resizeMode="contain"
+        />
+        <View>
+          <Text style={styles.bannerTitle}>Link Budget 5G NR</Text>
+          <Text style={styles.bannerSub}>7 modelos de perda de percurso</Text>
+        </View>
+      </View>
       <Text style={styles.sectionTitle}>Transmissor</Text>
       <View style={styles.card}>
         <Field label="Potência Tx (dBm)" value={txPower} onChange={setTxPower} />
@@ -379,6 +402,31 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   content: { padding: 16, paddingBottom: 40 },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  bannerLogo: {
+    width: 52,
+    height: 32,
+  },
+  bannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  bannerSub: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',

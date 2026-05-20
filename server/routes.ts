@@ -49,6 +49,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rename / update a calculation
+  app.put("/api/calculations/:id", async (req, res) => {
+    try {
+      const { name } = req.body;
+      if (!name || typeof name !== "string" || name.trim().length < 3) {
+        return res.status(400).json({ error: "Nome inválido (mínimo 3 caracteres)" });
+      }
+      const updated = await storage.updateCalculation(req.params.id, name.trim());
+      if (!updated) {
+        return res.status(404).json({ error: "Cálculo não encontrado" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Delete a calculation
   app.delete("/api/calculations/:id", async (req, res) => {
     try {

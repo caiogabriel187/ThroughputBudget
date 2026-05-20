@@ -25,6 +25,15 @@ export class DbStorage implements IStorage {
     return result;
   }
 
+  async updateCalculation(id: string, name: string): Promise<Calculation | undefined> {
+    const [result] = await db
+      .update(calculations)
+      .set({ name, updatedAt: new Date() })
+      .where(eq(calculations.id, id))
+      .returning();
+    return result;
+  }
+
   async deleteCalculation(id: string): Promise<void> {
     await db.delete(calculations).where(eq(calculations.id, id));
   }

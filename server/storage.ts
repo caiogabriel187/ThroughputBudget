@@ -4,6 +4,7 @@ export interface IStorage {
   saveCalculation(calculation: InsertCalculation): Promise<Calculation>;
   getCalculations(limit?: number): Promise<Calculation[]>;
   getCalculation(id: string): Promise<Calculation | undefined>;
+  updateCalculation(id: string, name: string): Promise<Calculation | undefined>;
   deleteCalculation(id: string): Promise<void>;
   getCalculationsByType(type: string, limit?: number): Promise<Calculation[]>;
 }
@@ -34,6 +35,14 @@ export class MemStorage implements IStorage {
 
   async getCalculation(id: string): Promise<Calculation | undefined> {
     return this.calculations.get(id);
+  }
+
+  async updateCalculation(id: string, name: string): Promise<Calculation | undefined> {
+    const existing = this.calculations.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, name, updatedAt: new Date() };
+    this.calculations.set(id, updated);
+    return updated;
   }
 
   async deleteCalculation(id: string): Promise<void> {
@@ -82,6 +91,9 @@ class LazyStorage implements IStorage {
   }
   async getCalculation(id: string) {
     return (await getStorage()).getCalculation(id);
+  }
+  async updateCalculation(id: string, name: string) {
+    return (await getStorage()).updateCalculation(id, name);
   }
   async deleteCalculation(id: string) {
     return (await getStorage()).deleteCalculation(id);
