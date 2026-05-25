@@ -20,7 +20,7 @@ export default function CalculationCard({ calculation, onPress, onDelete }: Prop
 
   const mainResult = isLinkBudget
     ? `${Number(calculation.results?.receivedPower ?? 0).toFixed(1)} dBm`
-    : `${Number(calculation.results?.throughput ?? 0).toFixed(1)} Mbps`;
+    : `${Number(calculation.results?.throughputMbps ?? 0).toFixed(1)} Mbps`;
 
   const mainLabel = isLinkBudget ? 'Pot. Recebida' : 'Throughput DL';
 
