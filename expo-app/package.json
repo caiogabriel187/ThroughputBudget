@@ -1,6 +1,7 @@
 {
   "name": "calculadora-5g-nr",
   "version": "1.0.0",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
