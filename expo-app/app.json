@@ -5,12 +5,18 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#0066cc",
+      "resizeMode": "contain"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.calculadora5gnr"
     },
     "android": {
-      "package": "com.calculadora5gnr"
+      "package": "com.calculadora5gnr",
+      "edgeToEdgeEnabled": false
     },
     "web": {
       "bundler": "metro"

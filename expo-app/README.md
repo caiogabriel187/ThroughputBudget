@@ -1,6 +1,12 @@
 # Calculadora 5G NR — App Mobile (Expo + Node.js)
 
-Aplicativo mobile React Native com **Expo SDK 54** para cálculo de **Throughput DL** e **Link Budget** em redes 5G NR, conectado a uma API REST construída com **Node.js + Express**.
+Aplicativo mobile React Native com **Expo SDK 53** para cálculo de **Throughput DL** e **Link Budget** em redes 5G NR, conectado a uma API REST construída com **Node.js + Express**.
+
+> ⚠️ **Se você baixou uma versão anterior do projeto**, antes de tudo apague as pastas `node_modules` e `.expo` dentro de `expo-app/` para evitar conflitos:
+> ```bash
+> rm -rf node_modules .expo package-lock.json
+> ```
+> (No Windows: apague manualmente essas pastas e o arquivo `package-lock.json`)
 
 ---
 
@@ -95,12 +101,30 @@ npx expo start
 
 Um QR Code aparecerá no terminal. Abra o app **Expo Go** no celular e escaneie o código.
 
-### 2.5 Rodar no emulador (opcional)
+### 2.5 Rodar no emulador Android (opcional)
 
-```bash
-npx expo start --android   # Requer Android Studio instalado
-npx expo start --ios       # Requer Mac com Xcode
-```
+1. Abra o **Android Studio** → **Virtual Device Manager** → inicie um emulador
+2. Aguarde o emulador carregar completamente
+3. No terminal do projeto, rode:
+   ```bash
+   npx expo start
+   ```
+4. Quando aparecer o menu, pressione **`a`** — o Expo instala o **Expo Go** dentro do emulador e abre o app
+
+> **Não use `npx expo run:android`** — esse comando tenta compilar um build nativo e exige Java/Gradle/Android SDK configurados, o que costuma travar com erros como `JAVA_HOME is not set`. O `npx expo start` + **`a`** é a forma simples e funciona em qualquer máquina.
+
+### 2.6 Se a tela do app travar na splash com "Downloading..."
+
+Isso normalmente significa que o **Expo Go** instalado está desatualizado. Faça:
+
+1. Abra a Play Store no emulador/celular → atualize o **Expo Go** para a versão mais recente
+2. No terminal, pare o servidor (Ctrl+C) e rode novamente:
+   ```bash
+   rm -rf node_modules .expo package-lock.json
+   npm install
+   npx expo start --clear
+   ```
+3. Escaneie o QR Code novamente
 
 ---
 
@@ -185,7 +209,7 @@ expo-app/
 
 | Camada | Tecnologia | Versão |
 |--------|------------|--------|
-| Frontend | React Native (Expo) | SDK 54 |
+| Frontend | React Native (Expo) | SDK 53 |
 | Linguagem | TypeScript | 5.8 |
 | Navegação | React Navigation v7 | ^7.x |
 | HTTP Client | axios | ^1.7 |
