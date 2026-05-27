@@ -1,211 +1,230 @@
-# Calculadora 5G NR — App Mobile (Expo + Node.js)
+# Calculadora 5G NR — App Mobile (React Native + Android Studio)
 
-Aplicativo mobile React Native com **Expo SDK 53** para cálculo de **Throughput DL** e **Link Budget** em redes 5G NR, conectado a uma API REST construída com **Node.js + Express**.
-
-> ⚠️ **Se você baixou uma versão anterior do projeto**, antes de tudo apague as pastas `node_modules` e `.expo` dentro de `expo-app/` para evitar conflitos:
-> ```bash
-> rm -rf node_modules .expo package-lock.json
-> ```
-> (No Windows: apague manualmente essas pastas e o arquivo `package-lock.json`)
+Aplicativo mobile React Native com **Expo SDK 53** para cálculo de **Throughput DL** e **Link Budget** em redes 5G NR, conectado a uma API REST construída com **Node.js + Express**, pronto para rodar no **Android Studio**.
 
 ---
 
 ## Requisitos do Sistema
 
-- [Node.js](https://nodejs.org/) 18 ou superior
-- [VS Code](https://code.visualstudio.com/) (recomendado)
-- [Expo Go](https://expo.dev/client) instalado no celular (Android ou iOS)
-- Celular e computador na **mesma rede Wi-Fi**
+- **Node.js** 18 ou superior — [nodejs.org](https://nodejs.org/)
+- **Android Studio** (versão Hedgehog ou superior) — [developer.android.com/studio](https://developer.android.com/studio)
+- **JDK 17** (já vem embutido no Android Studio em `Android Studio/jbr`)
+- **Android SDK** 35 (instale via Android Studio → SDK Manager)
 
 ---
 
-## Parte 1 — Backend (Node.js + Express)
+## Parte 1 — Configuração do Ambiente (Windows)
 
-O backend é a pasta raiz do projeto (fora de `expo-app/`).
+### 1.1 Instalar o Android Studio
 
-### 1.1 Instalar dependências do backend
+Durante a instalação, marque as opções:
+- **Android SDK**
+- **Android SDK Platform**
+- **Android Virtual Device**
 
-```bash
-# Na pasta raiz do projeto (onde está o package.json do servidor)
-npm install
+### 1.2 Configurar variáveis de ambiente
+
+Abra **"Variáveis de ambiente"** no Windows e adicione em **Variáveis do sistema**:
+
+| Variável | Valor |
+|----------|-------|
+| `JAVA_HOME` | `C:\Program Files\Android\Android Studio\jbr` |
+| `ANDROID_HOME` | `C:\Users\<SEU_USUARIO>\AppData\Local\Android\Sdk` |
+
+Em **Path**, adicione:
+```
+%JAVA_HOME%\bin
+%ANDROID_HOME%\platform-tools
+%ANDROID_HOME%\emulator
 ```
 
-### 1.2 Rodar o servidor localmente
+**Feche e reabra o terminal**, depois confirme:
 
 ```bash
+java -version
+adb --version
+```
+
+### 1.3 Criar um emulador
+
+1. Android Studio → **More Actions → Virtual Device Manager**
+2. **Create Device** → escolha Pixel 7 → **Next**
+3. Selecione imagem **API 35 (Android 15)** → **Download** → **Finish**
+4. Clique no ▶ para iniciar o emulador
+
+---
+
+## Parte 2 — Backend (Node.js + Express)
+
+Na pasta raiz do projeto (fora de `expo-app/`):
+
+```bash
+npm install
 npm run dev
 ```
 
-O servidor iniciará na porta **5000**. Você verá:
+Servidor inicia na **porta 5000**:
 ```
 [express] serving on port 5000
 ```
 
-### 1.3 Endpoints disponíveis
+### Endpoints disponíveis
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `GET` | `/api/calculations` | Lista todos os cenários salvos |
-| `GET` | `/api/calculations/:id` | Retorna um cenário específico |
-| `POST` | `/api/calculations` | Salva um novo cenário |
-| `PUT` | `/api/calculations/:id` | Renomeia um cenário existente |
-| `DELETE` | `/api/calculations/:id` | Remove um cenário |
-| `GET` | `/api/health` | Verifica status do servidor |
-
-### 1.4 Exemplo de requisição POST
-
-```json
-POST /api/calculations
-{
-  "name": "Cenário Macro Urbano",
-  "type": "throughput",
-  "parameters": { "bwMHz": "100", "scs": "30", "mimoLayers": "4" },
-  "results": { "throughputMbps": "1256.3", "prbs": "66" }
-}
-```
+| `GET` | `/api/calculations` | Lista todos os cenários |
+| `GET` | `/api/calculations/:id` | Retorna um cenário |
+| `POST` | `/api/calculations` | Cria novo cenário |
+| `PUT` | `/api/calculations/:id` | Renomeia cenário |
+| `DELETE` | `/api/calculations/:id` | Remove cenário |
+| `GET` | `/api/health` | Status do servidor |
 
 ---
 
-## Parte 2 — Frontend (React Native + Expo)
+## Parte 3 — Frontend (Expo + Android Studio)
 
-### 2.1 Abrir a pasta do app no VS Code
+### 3.1 Abrir a pasta `expo-app/` no VS Code
 
 ```
-Arquivo → Abrir Pasta → selecione a pasta expo-app/
+Arquivo → Abrir Pasta → expo-app/
 ```
 
-### 2.2 Instalar dependências do frontend
-
-No terminal integrado do VS Code (`Ctrl + '`):
+### 3.2 Instalar dependências
 
 ```bash
 npm install
 ```
 
-### 2.3 Configurar a URL do backend
+### 3.3 Configurar a URL do backend
 
-Edite `src/services/api.ts` e substitua `BASE_URL` pelo IP da sua máquina:
+Edite `src/services/api.ts` e ajuste a `BASE_URL`:
 
 ```ts
-// Descubra seu IP: Windows → ipconfig | Mac/Linux → ifconfig
-const BASE_URL = 'http://192.168.x.x:5000';
+// Descubra seu IP local:
+//   Windows → ipconfig (procure "Endereço IPv4")
+//   Mac/Linux → ifconfig
+const BASE_URL = 'http://192.168.X.X:5000';
 ```
 
-> Se estiver usando a versão publicada no Replit, a URL já está configurada. Caso rode o backend localmente, use o IP da sua máquina na rede local.
+> ⚠️ **Importante:** o emulador Android **não acessa `localhost`** — precisa do IP da rede ou do endereço especial `10.0.2.2:5000` que aponta para o `localhost` do PC host:
+> ```ts
+> const BASE_URL = 'http://10.0.2.2:5000';
+> ```
 
-### 2.4 Iniciar o Expo
+### 3.4 Gerar o projeto nativo Android (uma vez)
 
 ```bash
-npx expo start
+npx expo prebuild --platform android --clean
 ```
 
-Um QR Code aparecerá no terminal. Abra o app **Expo Go** no celular e escaneie o código.
+Esse comando cria a pasta `android/` com o projeto Gradle pronto para o Android Studio. Pode demorar alguns minutos na primeira vez.
 
-### 2.5 Rodar no emulador Android (opcional)
+### 3.5 Abrir no Android Studio
 
-1. Abra o **Android Studio** → **Virtual Device Manager** → inicie um emulador
-2. Aguarde o emulador carregar completamente
-3. No terminal do projeto, rode:
-   ```bash
-   npx expo start
-   ```
-4. Quando aparecer o menu, pressione **`a`** — o Expo instala o **Expo Go** dentro do emulador e abre o app
+1. Android Studio → **File → Open**
+2. Navegue até `expo-app/android/` e clique **OK**
+3. Aguarde o **Gradle Sync** terminar (canto inferior direito)
+4. Inicie o emulador
+5. Clique no botão **▶ Run 'app'** na barra superior
 
-> **Não use `npx expo run:android`** — esse comando tenta compilar um build nativo e exige Java/Gradle/Android SDK configurados, o que costuma travar com erros como `JAVA_HOME is not set`. O `npx expo start` + **`a`** é a forma simples e funciona em qualquer máquina.
+O app será compilado e instalado automaticamente no emulador.
 
-### 2.6 Se a tela do app travar na splash com "Downloading..."
+### 3.6 Alternativa via terminal
 
-Isso normalmente significa que o **Expo Go** instalado está desatualizado. Faça:
+Se preferir compilar pelo terminal (sem abrir o Android Studio):
 
-1. Abra a Play Store no emulador/celular → atualize o **Expo Go** para a versão mais recente
-2. No terminal, pare o servidor (Ctrl+C) e rode novamente:
-   ```bash
-   rm -rf node_modules .expo package-lock.json
-   npm install
-   npx expo start --clear
-   ```
-3. Escaneie o QR Code novamente
+```bash
+npx expo run:android
+```
+
+Com o emulador rodando, esse comando compila e instala o app.
+
+---
+
+## Solução de Problemas
+
+### Erro "JAVA_HOME is not set"
+
+Você não configurou as variáveis de ambiente. Volte à **seção 1.2** e configure `JAVA_HOME`, depois **feche e reabra todos os terminais**.
+
+### Erro "SDK location not found"
+
+Crie o arquivo `expo-app/android/local.properties` com o conteúdo:
+
+```
+sdk.dir=C:\\Users\\<SEU_USUARIO>\\AppData\\Local\\Android\\Sdk
+```
+
+(Use barras duplas `\\` no caminho — Windows exige.)
+
+### Build falha com erro de dependências antigas
+
+```bash
+cd expo-app
+rm -rf node_modules .expo android package-lock.json
+npm install
+npx expo prebuild --platform android --clean
+```
+
+(No Windows, apague as pastas manualmente pelo Explorer.)
+
+### App abre mas não carrega o histórico
+
+Verifique a `BASE_URL` em `src/services/api.ts`. Para emulador, use `http://10.0.2.2:5000`. Para celular físico, use o IP do PC na rede Wi-Fi.
+
+### Gradle Sync trava no Android Studio
+
+Em **File → Settings → Build → Gradle**, certifique-se de que o **Gradle JDK** está apontando para `Android Studio default JDK` (jbr).
 
 ---
 
 ## Estrutura do Projeto
 
-### Backend (pasta raiz)
-
-```
-server/
-├── index-dev.ts         # Entry point de desenvolvimento
-├── routes.ts            # Rotas da API REST (GET/POST/PUT/DELETE)
-├── storage.ts           # Interface de storage + MemStorage
-└── db-storage.ts        # Storage com PostgreSQL (Drizzle ORM)
-shared/
-└── schema.ts            # Tipos e schemas compartilhados (Zod + Drizzle)
-```
-
-### Frontend (pasta expo-app/)
-
 ```
 expo-app/
-├── App.tsx                      # Navegação principal (Stack + Bottom Tabs)
+├── App.tsx                      # Stack + Bottom Tabs (React Navigation)
+├── app.json                     # Configuração do Expo + plugin de build Android
+├── index.js                     # registerRootComponent
 ├── src/
 │   ├── screens/
-│   │   ├── HomeScreen.tsx       # Calculadora Throughput e Link Budget
-│   │   ├── HistoryScreen.tsx    # Histórico com FlatList + busca + filtros
+│   │   ├── HomeScreen.tsx       # Calculadora Throughput + Link Budget
+│   │   ├── HistoryScreen.tsx    # FlatList com histórico e busca
 │   │   ├── SaveScreen.tsx       # Formulário com validação
-│   │   └── DetailScreen.tsx     # Detalhes + renomear + remover cenário
+│   │   └── DetailScreen.tsx     # Detalhes + renomear + remover
 │   ├── components/
-│   │   └── CalculationCard.tsx  # Componente reutilizável para a lista
+│   │   └── CalculationCard.tsx  # Componente reutilizável
 │   └── services/
-│       └── api.ts               # Serviço axios — chamadas à API backend
-└── package.json
+│       └── api.ts               # axios — GET/POST/PUT/DELETE
+└── android/                     # Gerado por `npx expo prebuild`
 ```
-
----
-
-## Telas do Aplicativo
-
-| Tela | Rota | Descrição |
-|------|------|-----------|
-| **Throughput** | Tab 1 | Calcula throughput DL com parâmetros 5G NR (PRBs, MIMO, modulação) |
-| **Link Budget** | Tab 2 | Calcula link budget com 6 modelos de perda (FSPL, UMa, UMi, Indoor) |
-| **Histórico** | Tab 3 | Lista cenários salvos com busca por nome e filtro por tipo |
-| **Salvar** | Stack | Formulário com validação para nomear e salvar o cálculo atual |
-| **Detalhes** | Stack | Exibe parâmetros completos, renomear cenário (PUT) e remover (DELETE) |
 
 ---
 
 ## Checklist de Requisitos Acadêmicos
 
-### 1. Interface e Fundamentos (Unidade II)
+### 1. Interface e Fundamentos
+- [x] **Componentes Core**: `View`, `Text`, `TextInput`, `TouchableOpacity`, `Image`, `FlatList`, `Modal`, `ActivityIndicator`
+- [x] **Estilização**: 100% via `StyleSheet.create()` com Flexbox
+- [x] **Estado Local**: `useState` em todos os formulários e modais
 
-- [x] **Componentes Core**: `View`, `Text`, `TextInput`, `TouchableOpacity`, `Image` — todos usados em múltiplas telas
-- [x] **Estilização e Layout**: 100% via `StyleSheet.create()` com Flexbox (`flexDirection`, `flex`, `justifyContent`, `alignItems`, `flexWrap`)
-- [x] **Gerenciamento de Estado Local**: `useState` para todos os inputs dos formulários, estados de loading, modal de renomear, filtro de busca
+### 2. Navegação e Estrutura
+- [x] **Navegação**: React Navigation v7 — Stack + Bottom Tabs — **5 telas**
+- [x] **FlatList**: `HistoryScreen` com `keyExtractor`, `renderItem`, `RefreshControl`
+- [x] **Formulários com Validação**: `SaveScreen` valida nome (3–80 chars); `DetailScreen` valida renomear
 
-### 2. Navegação e Estrutura de Tela (Unidade III)
+### 3. Integração com Backend
+- [x] **API Express**: 5 endpoints REST em `server/routes.ts`
+- [x] **GET**: `HistoryScreen` busca lista via axios
+- [x] **POST/PUT/DELETE**: criar, renomear e remover cenários
+- [x] **Feedback Visual**: `ActivityIndicator` durante chamadas; `Alert` em erros de rede
 
-- [x] **Rotas e Navegação**: `@react-navigation/native` com `NavigationContainer`, `createNativeStackNavigator` (Stack) + `createBottomTabNavigator` (Tabs) — **5 telas distintas**
-- [x] **Listagens Eficientes**: `FlatList` com `keyExtractor` e `renderItem` em `HistoryScreen`, com `RefreshControl` para pull-to-refresh
-- [x] **Formulários com Validação**: `SaveScreen` valida nome obrigatório (mín. 3, máx. 80 caracteres) antes de submeter; `DetailScreen` valida o campo de renomear
-
-### 3. Integração com Backend (Unidade IV)
-
-- [x] **API Própria (Node.js + Express)**: servidor em `server/routes.ts` com 5 endpoints REST completos
-- [x] **Consumo de Dados (GET)**: `HistoryScreen` busca a lista via `axios` (`GET /api/calculations`) ao focar na tela (`useFocusEffect`)
-- [x] **Envio de Dados**:
-  - `POST /api/calculations` — `SaveScreen` envia o formulário para salvar novo cenário
-  - `PUT /api/calculations/:id` — `DetailScreen` renomeia o cenário via Modal + TextInput
-  - `DELETE /api/calculations/:id` — `HistoryScreen` e `DetailScreen` removem cenários com confirmação `Alert`
-- [x] **Feedback Visual de Rede**: `ActivityIndicator` em `SaveScreen` (salvamento) e `DetailScreen` (renomear); `Alert.alert` trata erros de conexão em todas as telas
-
-### 4. Boas Práticas e Entrega (Critérios Gerais)
-
-- [x] **Componentização**: `CalculationCard` em `src/components/` — componente reutilizável usado na `FlatList` do histórico
-- [x] **Versionamento e Entrega**: projeto entregue via repositório com este `README.md` contendo instruções completas para frontend e backend
+### 4. Boas Práticas
+- [x] **Componentização**: `CalculationCard` em `src/components/`
+- [x] **Versionamento**: projeto entregue com README completo
 
 ---
 
-## Tecnologias Utilizadas
+## Tecnologias
 
 | Camada | Tecnologia | Versão |
 |--------|------------|--------|
@@ -213,7 +232,6 @@ expo-app/
 | Linguagem | TypeScript | 5.8 |
 | Navegação | React Navigation v7 | ^7.x |
 | HTTP Client | axios | ^1.7 |
+| Build Android | Gradle + AGP | API 35 |
+| JDK | OpenJDK | 17 (jbr) |
 | Backend | Node.js + Express | 18+ |
-| Validação | Zod | ^3.x |
-| ORM | Drizzle ORM | ^0.30 |
-| Banco de Dados | PostgreSQL (fallback: memória) | — |
