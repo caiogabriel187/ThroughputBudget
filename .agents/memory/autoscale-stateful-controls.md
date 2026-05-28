@@ -1,0 +1,1 @@
+Public autoscale deployments should be treated as running behind reverse proxy/load-balancing infrastructure. For security scans, prioritize checking whether session stores, rate-limit counters, and abuse-prevention quotas live only in process memory; those controls often fail open, fragment across instances, or become shared-bucket bottlenecks behind the proxy.

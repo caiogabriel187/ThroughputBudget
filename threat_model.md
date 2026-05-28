@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Aplicação pública de cálculo 5G NR com frontend React/React Native Web e backend Express. Em produção, o deployment web serve apenas o bundle de `client/` e expõe a API REST em `server/routes.ts`; o `expo-app/` é um artefato separado para desenvolvimento móvel e não faz parte da superfície do deployment web. O app usa sessões anônimas por cookie para isolar os cenários salvos de cada navegador, com persistência em PostgreSQL quando disponível e fallback para memória quando o banco falha. O tráfego externo usa TLS provido pela plataforma.
+Aplicação pública de cálculo 5G NR com frontend React/React Native Web e backend Express. Em produção, o deployment web serve apenas o bundle de `client/` e expõe a API REST em `server/routes.ts`; o `expo-app/` é um artefato separado para desenvolvimento móvel e não faz parte da superfície do deployment web. O app usa sessões anônimas por cookie para isolar os cenários salvos de cada navegador, com persistência em PostgreSQL quando disponível e fallback para memória quando o banco falha. O deployment atual é público e do tipo autoscale, então o tráfego chega ao app através da infraestrutura reversa da plataforma e controles mantidos apenas na memória do processo não podem ser tratados como limites globais confiáveis. O tráfego externo usa TLS provido pela plataforma.
 
 ## Assets
 
@@ -25,6 +25,7 @@ Aplicação pública de cálculo 5G NR com frontend React/React Native Web e bac
 
 - Entradas de produção: `server/index-prod.ts`, `server/app.ts`, `server/routes.ts`, `client/src/main.tsx`.
 - Áreas de maior risco: criação/uso de sessão em `server/app.ts`, mutações públicas e rate limiting em `server/routes.ts`, fallback de armazenamento em `server/storage.ts`, conexão com banco em `db/index.ts`.
+- Em deployment autoscale, trate stores de sessão, rate limits e quotas em memória local como controles frágeis; eles precisam de semântica compartilhada entre instâncias para proteger disponibilidade.
 - Superfícies públicas: `GET /api/health`, `POST /api/calculations`, leitura/atualização/remoção de cálculos em `/api/calculations/*` condicionadas à sessão do navegador.
 - Áreas normalmente fora de escopo de produção: `expo-app/`, Vite dev server, diretório `mobile/` raiz, assets auxiliares.
 
@@ -44,7 +45,7 @@ Os cenários salvos podem revelar dados operacionais de engenharia. A API deve r
 
 ### Denial of Service
 
-O deployment é público e aceita escritas anônimas. Os controles de abuso precisam resistir a spoofing de IP, distribuição entre instâncias e criação repetida de novas sessões; caso contrário, um atacante pode preencher os limites globais de armazenamento ou gerar churn suficiente para degradar o serviço e impedir salvamentos legítimos.
+O deployment é público e aceita escritas anônimas. Os controles de abuso precisam resistir a spoofing de IP, distribuição entre instâncias e criação repetida de novas sessões; caso contrário, um atacante pode preencher os limites globais de armazenamento ou gerar churn suficiente para degradar o serviço e impedir salvamentos legítimos. Em particular, stores de sessão, contadores de rate limit e verificações de capacidade mantidos apenas na memória do processo não fornecem proteção confiável em um deployment autoscale atrás de proxy reverso.
 
 ### Elevation of Privilege
 

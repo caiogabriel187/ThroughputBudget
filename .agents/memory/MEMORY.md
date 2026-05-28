@@ -1,0 +1,1 @@
+- [Autoscale stateful controls](autoscale-stateful-controls.md) — In public autoscale deployments, in-memory session stores and rate-limit maps are not reliable global security controls.
