@@ -1,25 +1,26 @@
 import { type InsertCalculation, type Calculation } from "@shared/schema";
 
 export interface IStorage {
-  saveCalculation(calculation: InsertCalculation): Promise<Calculation>;
-  getCalculations(limit?: number): Promise<Calculation[]>;
-  getCalculation(id: string): Promise<Calculation | undefined>;
-  updateCalculation(id: string, name: string): Promise<Calculation | undefined>;
-  deleteCalculation(id: string): Promise<void>;
-  getCalculationsByType(type: string, limit?: number): Promise<Calculation[]>;
+  saveCalculation(userId: string, calculation: InsertCalculation): Promise<Calculation>;
+  getCalculations(userId: string, limit?: number): Promise<Calculation[]>;
+  getCalculation(userId: string, id: string): Promise<Calculation | undefined>;
+  updateCalculation(userId: string, id: string, name: string): Promise<Calculation | undefined>;
+  deleteCalculation(userId: string, id: string): Promise<void>;
+  getCalculationsByType(userId: string, type: string, limit?: number): Promise<Calculation[]>;
+  getCalculationCount(userId: string): Promise<number>;
+  getTotalCount(): Promise<number>;
 }
 
-// In-memory storage as the primary/fallback storage
 export class MemStorage implements IStorage {
   private calculations: Map<string, Calculation> = new Map();
-  private nextId = 1;
 
-  async saveCalculation(calculation: InsertCalculation): Promise<Calculation> {
+  async saveCalculation(userId: string, calculation: InsertCalculation): Promise<Calculation> {
     const id = crypto.randomUUID();
     const now = new Date();
     const result: Calculation = {
       ...calculation,
       id,
+      userId,
       createdAt: now,
       updatedAt: now,
     };
@@ -27,43 +28,59 @@ export class MemStorage implements IStorage {
     return result;
   }
 
-  async getCalculations(limit: number = 50): Promise<Calculation[]> {
+  async getCalculations(userId: string, limit: number = 50): Promise<Calculation[]> {
     return Array.from(this.calculations.values())
+      .filter((c) => c.userId === userId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
   }
 
-  async getCalculation(id: string): Promise<Calculation | undefined> {
-    return this.calculations.get(id);
+  async getCalculation(userId: string, id: string): Promise<Calculation | undefined> {
+    const c = this.calculations.get(id);
+    if (!c || c.userId !== userId) return undefined;
+    return c;
   }
 
-  async updateCalculation(id: string, name: string): Promise<Calculation | undefined> {
+  async updateCalculation(userId: string, id: string, name: string): Promise<Calculation | undefined> {
     const existing = this.calculations.get(id);
-    if (!existing) return undefined;
+    if (!existing || existing.userId !== userId) return undefined;
     const updated = { ...existing, name, updatedAt: new Date() };
     this.calculations.set(id, updated);
     return updated;
   }
 
-  async deleteCalculation(id: string): Promise<void> {
-    this.calculations.delete(id);
+  async deleteCalculation(userId: string, id: string): Promise<void> {
+    const existing = this.calculations.get(id);
+    if (existing && existing.userId === userId) {
+      this.calculations.delete(id);
+    }
   }
 
-  async getCalculationsByType(type: string, limit: number = 50): Promise<Calculation[]> {
+  async getCalculationsByType(userId: string, type: string, limit: number = 50): Promise<Calculation[]> {
     return Array.from(this.calculations.values())
-      .filter((c) => c.type === type)
+      .filter((c) => c.userId === userId && c.type === type)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
   }
+
+  async getCalculationCount(userId: string): Promise<number> {
+    let n = 0;
+    for (const c of this.calculations.values()) {
+      if (c.userId === userId) n++;
+    }
+    return n;
+  }
+
+  async getTotalCount(): Promise<number> {
+    return this.calculations.size;
+  }
 }
 
-// Try DB storage, fall back to mem
 async function createStorage(): Promise<IStorage> {
   try {
     const { DbStorage } = await import("./db-storage.js");
     const dbStorage = new DbStorage();
-    // Test the connection with a quick query
-    await dbStorage.getCalculations(1);
+    await dbStorage.getCalculations("__probe__", 1);
     console.log("[storage] Using database storage");
     return dbStorage;
   } catch (err: any) {
@@ -81,25 +98,30 @@ async function getStorage(): Promise<IStorage> {
   return storageInstance;
 }
 
-// Proxy that lazily initializes storage
 class LazyStorage implements IStorage {
-  async saveCalculation(data: InsertCalculation) {
-    return (await getStorage()).saveCalculation(data);
+  async saveCalculation(userId: string, data: InsertCalculation) {
+    return (await getStorage()).saveCalculation(userId, data);
   }
-  async getCalculations(limit?: number) {
-    return (await getStorage()).getCalculations(limit);
+  async getCalculations(userId: string, limit?: number) {
+    return (await getStorage()).getCalculations(userId, limit);
   }
-  async getCalculation(id: string) {
-    return (await getStorage()).getCalculation(id);
+  async getCalculation(userId: string, id: string) {
+    return (await getStorage()).getCalculation(userId, id);
   }
-  async updateCalculation(id: string, name: string) {
-    return (await getStorage()).updateCalculation(id, name);
+  async updateCalculation(userId: string, id: string, name: string) {
+    return (await getStorage()).updateCalculation(userId, id, name);
   }
-  async deleteCalculation(id: string) {
-    return (await getStorage()).deleteCalculation(id);
+  async deleteCalculation(userId: string, id: string) {
+    return (await getStorage()).deleteCalculation(userId, id);
   }
-  async getCalculationsByType(type: string, limit?: number) {
-    return (await getStorage()).getCalculationsByType(type, limit);
+  async getCalculationsByType(userId: string, type: string, limit?: number) {
+    return (await getStorage()).getCalculationsByType(userId, type, limit);
+  }
+  async getCalculationCount(userId: string) {
+    return (await getStorage()).getCalculationCount(userId);
+  }
+  async getTotalCount() {
+    return (await getStorage()).getTotalCount();
   }
 }
 
