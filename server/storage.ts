@@ -1,7 +1,12 @@
 import { type InsertCalculation, type Calculation } from "@shared/schema";
 
+export interface StorageLimits {
+  maxPerUser: number;
+  maxTotal: number;
+}
+
 export interface IStorage {
-  saveCalculation(userId: string, calculation: InsertCalculation): Promise<Calculation>;
+  saveCalculation(userId: string, calculation: InsertCalculation, limits: StorageLimits): Promise<Calculation>;
   getCalculations(userId: string, limit?: number): Promise<Calculation[]>;
   getCalculation(userId: string, id: string): Promise<Calculation | undefined>;
   updateCalculation(userId: string, id: string, name: string): Promise<Calculation | undefined>;
@@ -14,7 +19,25 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private calculations: Map<string, Calculation> = new Map();
 
-  async saveCalculation(userId: string, calculation: InsertCalculation): Promise<Calculation> {
+  // Check and insert are performed without any internal await, so they run
+  // as one uninterruptible synchronous slice within the Node.js event loop.
+  // This prevents the TOCTOU race that would exist if the caller did
+  // getTotalCount() + getCalculationCount() + saveCalculation() as three
+  // separate async calls (other requests can interleave between those awaits).
+  async saveCalculation(userId: string, calculation: InsertCalculation, limits: StorageLimits): Promise<Calculation> {
+    const total = this.calculations.size;
+    if (total >= limits.maxTotal) {
+      throw new Error("CAPACITY_EXCEEDED");
+    }
+
+    let userCount = 0;
+    for (const c of this.calculations.values()) {
+      if (c.userId === userId) userCount++;
+    }
+    if (userCount >= limits.maxPerUser) {
+      throw new Error("USER_LIMIT_EXCEEDED");
+    }
+
     const id = crypto.randomUUID();
     const now = new Date();
     const result: Calculation = {
@@ -99,8 +122,8 @@ async function getStorage(): Promise<IStorage> {
 }
 
 class LazyStorage implements IStorage {
-  async saveCalculation(userId: string, data: InsertCalculation) {
-    return (await getStorage()).saveCalculation(userId, data);
+  async saveCalculation(userId: string, data: InsertCalculation, limits: StorageLimits) {
+    return (await getStorage()).saveCalculation(userId, data, limits);
   }
   async getCalculations(userId: string, limit?: number) {
     return (await getStorage()).getCalculations(userId, limit);

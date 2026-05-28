@@ -7,7 +7,11 @@ const MAX_LIMIT = 50;
 const MAX_RECORDS_PER_USER = 200;
 const MAX_TOTAL_RECORDS = 2000;
 
-// IP-based rate limit for POST — not bypassable by rotating session cookies
+// IP-based rate limit applied to ALL mutating routes.
+// Uses req.ip (populated from X-Forwarded-For when trust proxy is enabled)
+// so the counter is keyed on the real visitor address, not the proxy address.
+// Stored in process memory — limits are advisory in multi-instance deployments
+// but still provide meaningful throttling per backend instance.
 const IP_RATE_LIMIT = 30;
 const RATE_WINDOW_MS = 60_000;
 const ipRateMap = new Map<string, { count: number; resetAt: number }>();
@@ -20,7 +24,9 @@ setInterval(() => {
 }, RATE_WINDOW_MS);
 
 function getClientIp(req: Request): string {
-  return req.socket.remoteAddress ?? "unknown";
+  // req.ip is populated from X-Forwarded-For when trust proxy is enabled,
+  // giving the real visitor address rather than the upstream proxy's address.
+  return req.ip ?? req.socket.remoteAddress ?? "unknown";
 }
 
 function ipRateLimit(req: Request, res: Response, next: NextFunction) {
@@ -41,11 +47,22 @@ function ipRateLimit(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-// Assigns a stable userId to the session — only called for mutating operations
-// so GET requests do not force session creation in the store.
+// Assigns a stable userId to the session — only called for POST so that
+// the first save creates a session. PUT and DELETE never trigger session
+// creation; callers without a session simply have no data to operate on.
 function requireSession(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     req.session.userId = crypto.randomUUID();
+  }
+  next();
+}
+
+// Guard for routes that need an existing session but must NOT create one.
+// If there is no session, the caller has no stored data, so 404 is correct
+// and avoids allocating a new server-side session object for every request.
+function requireExistingSession(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(404).json({ error: "Cálculo não encontrado" });
   }
   next();
 }
@@ -56,25 +73,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST: IP rate-limit first (cannot be bypassed by rotating cookies),
-  // then session assignment, then per-user and global caps.
+  // then session assignment, then atomic limit enforcement inside storage.
   app.post("/api/calculations", ipRateLimit, requireSession, async (req, res) => {
     try {
       const userId = req.session.userId!;
-
-      const totalCount = await storage.getTotalCount();
-      if (totalCount >= MAX_TOTAL_RECORDS) {
-        return res.status(409).json({ error: "Capacidade do sistema atingida. Tente novamente mais tarde." });
-      }
-
-      const userCount = await storage.getCalculationCount(userId);
-      if (userCount >= MAX_RECORDS_PER_USER) {
-        return res.status(409).json({ error: "Limite de cenários atingido. Apague alguns para continuar." });
-      }
-
       const validated = insertCalculationSchema.parse(req.body);
-      const calculation = await storage.saveCalculation(userId, validated);
+      const calculation = await storage.saveCalculation(userId, validated, {
+        maxPerUser: MAX_RECORDS_PER_USER,
+        maxTotal: MAX_TOTAL_RECORDS,
+      });
       res.json(calculation);
     } catch (error: any) {
+      if (error.message === "CAPACITY_EXCEEDED") {
+        return res.status(409).json({ error: "Capacidade do sistema atingida. Tente novamente mais tarde." });
+      }
+      if (error.message === "USER_LIMIT_EXCEEDED") {
+        return res.status(409).json({ error: "Limite de cenários atingido. Apague alguns para continuar." });
+      }
       res.status(400).json({ error: error.message });
     }
   });
@@ -117,7 +132,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/calculations/:id", requireSession, async (req, res) => {
+  // PUT/DELETE: IP rate limit prevents write flooding even for clients that
+  // already hold a valid session. requireExistingSession ensures these routes
+  // never allocate a new session object for unauthenticated callers, so an
+  // attacker cannot exhaust the session store by hitting PUT/DELETE without a
+  // cookie. Callers without a session have no stored data → 404 is correct.
+  app.put("/api/calculations/:id", ipRateLimit, requireExistingSession, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { name } = req.body;
@@ -134,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/calculations/:id", requireSession, async (req, res) => {
+  app.delete("/api/calculations/:id", ipRateLimit, requireExistingSession, async (req, res) => {
     try {
       const userId = req.session.userId!;
       await storage.deleteCalculation(userId, req.params.id);

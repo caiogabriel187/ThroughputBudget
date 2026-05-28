@@ -7,6 +7,7 @@ import express, {
   NextFunction,
 } from "express";
 import session from "express-session";
+import createMemoryStore from "memorystore";
 
 import { registerRoutes } from "./routes";
 
@@ -35,12 +36,28 @@ declare module "http" {
 
 export const app = express();
 
-// Session middleware — saveUninitialized: false means sessions are only
-// persisted to the store once modified (i.e. after requireSession sets userId).
-// GET routes intentionally do not call requireSession, so read-only requests
-// never cause new session store entries.
+// Trust the first upstream proxy (Replit's TLS terminator / load balancer)
+// so that req.ip reflects the real client address from X-Forwarded-For
+// instead of the proxy's internal TCP peer address.
+app.set("trust proxy", 1);
+
+// Bounded session store: LRU-evicts oldest sessions once the cap is reached,
+// and periodically prunes expired entries. This prevents unbounded heap growth
+// from unauthenticated session churn (unlike the default MemoryStore).
+const BoundedMemoryStore = createMemoryStore(session);
+
 app.use(
   session({
+    store: new BoundedMemoryStore({
+      // Prune expired sessions every hour.
+      checkPeriod: 60 * 60 * 1000,
+      // Hard cap: oldest sessions are evicted when exceeded. Each session is
+      // counted as 1 unit (no custom length function), so this limits the
+      // number of concurrent live sessions regardless of attacker churn.
+      max: 500,
+      // Session TTL matches the cookie maxAge below (24 h).
+      ttl: 24 * 60 * 60 * 1000,
+    }),
     secret: process.env.SESSION_SECRET ?? "dev-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
@@ -48,7 +65,7 @@ app.use(
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours — limits long-term accumulation
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   }),
 );
